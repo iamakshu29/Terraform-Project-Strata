@@ -6,8 +6,8 @@
 # Instance profile — wraps the role, so EC2 can use it
 
 resource "aws_iam_role" "strata_app" {
-  for_each   = var.iam_policy
-  name = each.key
+  for_each = var.iam_policy
+  name     = each.key
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -26,41 +26,50 @@ resource "aws_iam_role" "strata_app" {
   tags = local.tags
 }
 
+locals {
+  policies = merge([
+        for res_name, policy in var.iam_policy : {
+            for policy_name, policy_type in policy:
+            "${res_name}-${policy_name}" => {
+                policy_name = policy_name
+                policy_type = policy_type
+            }
+        }
+    ]...)
+}
 
 data "aws_iam_policy_document" "policy" {
   dynamic "statement" {
-    for_each = var.iam_policy
+    for_each = local.policies
 
     content {
-      sid       = statement.key
-      effect    = statement.value.effect
-      actions   = statement.value.actions
-      resources = statement.value.resources
+      sid       = statement.value.policy_type.sid
+      effect    = statement.value.policy_type.effect
+      actions   = statement.value.policy_type.actions
+      resources = statement.value.policy_type.resources
     }
   }
 }
 
 # Create IAM policy, for allowing an EC2 instance, ECS task, or an application to read the secret credentials
-resource "aws_iam_policy" "read_secrets_policy" {
-  for_each   = var.iam_policy
-  name        = "strata-read-db-secret-policy"
-  description = "Allows reading the database secret string"
-  policy = data.aws_iam_policy_document.policy.json
+resource "aws_iam_policy" "strata_policy" {
+  for_each    = local.policies
+  name        = "strata-${each.value.policy_name}"
+  policy      = data.aws_iam_policy_document.policy[each.key].json
 }
 
 
 # Controls who can access the secret at the secret level
-resource "aws_iam_role_policy_attachment" "read_secrets" {
-  for_each   = var.iam_policy
+resource "aws_iam_role_policy_attachment" "strata-attach-policy" {
+  for_each = local.policies
   role       = each.key
-  policy_arn = each.value
+  policy_arn = aws_iam_policy.strata_policy[each.value.policy_name].arn
 }
 
 # Instance profile — required for EC2 to use the role
-resource "aws_iam_instance_profile" "strata" {
-  for_each = var.iam_policy
-  name     = each.key
-  role     = each.key
-}
+# resource "aws_iam_instance_profile" "strata" {
+#   name     = "ec2-polcy"
+#   role     = aws_iam_policy.strata_policy[].arn
+# }
 
 # On EC2 iam_instance_profile = aws_iam_instance_profile.strata_app.name

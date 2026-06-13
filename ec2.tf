@@ -33,7 +33,7 @@ resource "aws_instance" "strata_server" {
   key_name                    = aws_key_pair.strata_key.key_name
   subnet_id                   = aws_subnet.strata_public_subnet[var.aws_bastian_instance.subnet_az].id
   associate_public_ip_address = var.aws_bastian_instance.associate_public_ip_address
-  security_groups             = [aws_security_group.strata_sg["bastian"].id, aws_security_group.strata_sg["ec2"].id]
+  vpc_security_group_ids      = [aws_security_group.strata_sg["bastion"].id, aws_security_group.strata_sg["ec2"].id]
 
   tags = local.tags
 }
