@@ -39,15 +39,12 @@ locals {
 }
 
 data "aws_iam_policy_document" "policy" {
-  dynamic "statement" {
-    for_each = local.policies
-
-    content {
-      sid       = statement.value.policy_type.sid
-      effect    = statement.value.policy_type.effect
-      actions   = statement.value.policy_type.actions
-      resources = statement.value.policy_type.resources
-    }
+  for_each = local.policies
+  statement {
+    sid       = each.value.policy_type.sid
+    effect    = each.value.policy_type.effect
+    actions   = each.value.policy_type.actions
+    resources = each.value.policy_type.resources
   }
 }
 
@@ -63,7 +60,7 @@ resource "aws_iam_policy" "strata_policy" {
 resource "aws_iam_role_policy_attachment" "strata-attach-policy" {
   for_each = local.policies
   role       = each.key
-  policy_arn = aws_iam_policy.strata_policy[each.value.policy_name].arn
+  policy_arn = aws_iam_policy.strata_policy[each.key].arn
 }
 
 # Instance profile — required for EC2 to use the role
