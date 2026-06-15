@@ -1,5 +1,5 @@
 resource "aws_route_table" "strata_public" {
-  vpc_id = local.vpc_cidr
+  vpc_id = aws_vpc.strata.id
 }
 
 resource "aws_route" "strata_public" {
@@ -12,7 +12,7 @@ resource "aws_route" "strata_public" {
 
 resource "aws_route_table_association" "strata_public" {
   for_each       = var.public_subnets
-  subnet_id      = each.key
+  subnet_id      = aws_subnet.strata_public_subnet[each.key].id
   route_table_id = aws_route_table.strata_public.id
 }
 
@@ -34,7 +34,7 @@ resource "aws_route" "strata_private" {
 
 resource "aws_route_table_association" "strata_private" {
   for_each       = var.private_subnets
-  subnet_id      = each.key
+  subnet_id      = aws_subnet.strata_private_subnet[each.key].id
   route_table_id = aws_route_table.strata_private.id
 }
 
@@ -54,6 +54,6 @@ resource "aws_route" "strata_data" {
 
 resource "aws_route_table_association" "strata_data" {
   for_each       = var.data_subnets
-  subnet_id      = each.key
+  subnet_id      = aws_subnet.strata_data_subnet[each.key].id
   route_table_id = aws_route_table.strata_data.id
 }

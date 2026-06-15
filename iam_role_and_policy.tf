@@ -1,9 +1,12 @@
 # The flow is:
 # IAM Role — identity that your EC2/ECS assumes
 # Trust policy — defines who can assume the role (EC2 service in this case)
-# IAM Policy, which contains rules
-# Policy attachment — attaches your policy (read_secrets_policy) to the role (strata_app)
+# IAM Policy, which contains rules/permission
+# Policy attachment — attaches your policy (read_secrets_policy) to the role role_ecs_task, ...
 # Instance profile — wraps the role, so EC2 can use it
+# policy_document -> policy -> role -> policy_attachment (to attach that policy to a role) -> add the role to a resource 
+
+# NEEDS REWORK
 
 resource "aws_iam_role" "strata_app" {
   for_each = var.iam_policy
@@ -31,6 +34,7 @@ locals {
         for res_name, policy in var.iam_policy : {
             for policy_name, policy_type in policy:
             "${res_name}-${policy_name}" => {
+                res_name    = res_name    # role key — used to look up aws_iam_role.strata_app
                 policy_name = policy_name
                 policy_type = policy_type
             }
@@ -58,15 +62,15 @@ resource "aws_iam_policy" "strata_policy" {
 
 # Controls who can access the secret at the secret level
 resource "aws_iam_role_policy_attachment" "strata-attach-policy" {
-  for_each = local.policies
-  role       = each.key
+  for_each   = local.policies
+  role       = aws_iam_role.strata_app[each.value.res_name].name
   policy_arn = aws_iam_policy.strata_policy[each.key].arn
 }
 
 # Instance profile — required for EC2 to use the role
-# resource "aws_iam_instance_profile" "strata" {
-#   name     = "ec2-polcy"
-#   role     = aws_iam_policy.strata_policy[].arn
-# }
+resource "aws_iam_instance_profile" "strata" {
+  name     = "ec2-polcy"
+  role     = aws_iam_role.strata_app.arn
+}
 
 # On EC2 iam_instance_profile = aws_iam_instance_profile.strata_app.name

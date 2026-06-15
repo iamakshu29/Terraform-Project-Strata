@@ -1,3 +1,5 @@
+aws_region = "ap-south-1"
+
 env_tag = "dev"
 
 vpc = {
@@ -231,7 +233,7 @@ security_group = {
     ingress = {
       ssh = {
         # Replace with your office/home IP
-        cidr_ipv4   = "0.0.0.0/0"
+        cidr_ipv4   = "0.0.0.0/0" # Use VPN or home IP instead
         from_port   = 22
         to_port     = 22
         ip_protocol = "tcp"
@@ -291,6 +293,8 @@ rds = {
   apply_immediately          = false
   engine_version             = "16.2"
   instance_class             = "db.t3.medium" # "db.t3.medium" for dev, "db.r6g.large" minimum for prod
+  engine                     = "postgres"
+  db_name                    = "testDB"
 }
 
 kms_key = {
@@ -318,6 +322,10 @@ launch_template = {
   subnet_az                   = "us-east-1b"
   subnet_type                 = "private"
   associate_public_ip_address = false
+  volume_size = 50
+  volume_type = "gp3"
+  encrypted = true
+  deletion_on_termination = true
 }
 
 asg = {

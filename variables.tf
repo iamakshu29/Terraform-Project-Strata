@@ -1,3 +1,8 @@
+variable "aws_region" {
+  type = string
+  default = "us-east-1"
+}
+
 variable "env_tag" {
   type        = string
   description = "Environment Value"
@@ -101,6 +106,8 @@ variable "rds" {
     apply_immediately          = bool
     instance_class             = string
     engine_version             = string
+    engine                     = string
+    db_name                    = string
   })
 }
 

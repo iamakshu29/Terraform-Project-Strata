@@ -1,10 +1,26 @@
 resource "aws_launch_template" "strata" {
-  name_prefix   = "foobar"
+  name_prefix   = "strata-app-lt"
   image_id      = data.aws_ami.ubuntu.id
   instance_type = var.launch_template.instance_type
+  key_name = aws_key_pair.strata_key.key_name # Using same key for bastion and pvt server for now
   vpc_security_group_ids = [
     aws_security_group.strata_sg["ec2"].id
   ]
+
+  # Configuring Volume
+  block_device_mappings {
+    # "/dev/xvda" is typically the root volume for Linux (use /dev/sda1 for Windows)
+    device_name = "/dev/xvda"
+
+    ebs {
+      volume_size           =  var.launch_template.volume_size    # Size in GB
+      volume_type           =  var.launch_template.volume_type # General Purpose SSD (gp3 is best practice)
+      encrypted             =  var.launch_template.encrypted
+      kms_key_id            =  aws_kms_key.strata.arn
+      delete_on_termination = var.launch_template.deletion_on_termination   # Cleans up the disk when ASG terminates the instance
+    }
+  }
+  
 }
 
 resource "aws_autoscaling_group" "strata" {
@@ -18,7 +34,7 @@ resource "aws_autoscaling_group" "strata" {
     id      = aws_launch_template.strata.id
     version = "$Latest"
   }
-  vpc_zone_identifier = [for subnet in aws_subnet.strata_public_subnet : subnet.id]
+  vpc_zone_identifier = [for subnet in aws_subnet.strata_private_subnet : subnet.id]
 
   instance_maintenance_policy {
     min_healthy_percentage = 90

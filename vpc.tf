@@ -27,7 +27,7 @@ resource "aws_subnet" "strata_private_subnet" {
   availability_zone = each.key
 
 
-  tags = merge({ Name = "public-${each.key}" }, local.tags)
+  tags = merge({ Name = "private-${each.key}" }, local.tags)
 }
 
 # Data Subnets
@@ -38,7 +38,7 @@ resource "aws_subnet" "strata_data_subnet" {
   availability_zone = each.key
 
 
-  tags = merge({ Name = "public-${each.key}" }, local.tags)
+  tags = merge({ Name = "data-${each.key}" }, local.tags)
 }
 
 resource "aws_db_subnet_group" "strata_db_group" {
@@ -56,7 +56,7 @@ resource "aws_db_subnet_group" "strata_db_group" {
 resource "aws_internet_gateway" "strata" {
   vpc_id = aws_vpc.strata.id
 
-  tags = try(local.tags, {})
+  tags = local.tags
 }
 
 # EIPs

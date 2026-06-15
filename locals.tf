@@ -13,6 +13,4 @@ locals {
     "us-east-1c" = "us-east-1b" # as I create NAT in only 2 regions
   }
 
-  db_subnet_group_name = [for s in aws_subnet.strata_data_subnet : s.id]
-
 }

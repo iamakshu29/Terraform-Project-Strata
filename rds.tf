@@ -11,7 +11,8 @@ resource "aws_db_instance" "strata" {
   apply_immediately          = try(var.rds.apply_immediately, false)
   instance_class             = var.rds.instance_class
   engine_version             = var.rds.engine_version
-  engine                     = "postgres"
+  engine                     = var.rds.engine
+  db_name                    = var.rds.db_name
 
 
   # will do with secrets manager
