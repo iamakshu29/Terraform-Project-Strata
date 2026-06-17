@@ -175,3 +175,51 @@ Overusing locals for every tiny value                Creates indirection with no
 ``` Another TIP ```
 locals is not a resource block. It does not support for_each or each.value
 each only exists inside resource, data, module blocks that have for_each on them.
+
+---
+```Another TIP ```
+While defining the schema in variables.tf
+for 
+type = object({}) -> Use it for fixed set of attributes
+type = map() -> use it for dynamic attributes
+
+Also if using object({}) its important to define those fixed keys as well...check for nacl_rules as example in variables.tf
+
+
+---
+``` How to use Terraform Graph ```
+If you haven't done so already, install Terraform
+Open command palette using Ctrl+Shift+P
+Select command Generate Terraform Graph
+
+---
+``` Another TIP ```
+## IAM Role — Two concerns, always
+
+| | Question | Terraform |
+|---|---|---|
+| Trust Policy (assume role) | **Who** can use this role? | `assume_role_policy` arg inside `aws_iam_role` — NOT a separate resource |
+| Permission Policy | **What** can it do? | `aws_iam_policy` + `aws_iam_role_policy_attachment` — separate resources |
+
+### Trust Policy is baked into the role
+It is an argument on `aws_iam_role`, not a standalone resource. You cannot create a role without one.
+In the plan you won't see a separate `aws_iam_trust_policy` resource — it shows up as an attribute inside `aws_iam_role`.
+
+### Permission Policy is 3 separate resources
+```
+aws_iam_policy                   → the policy document (what actions are allowed)
+aws_iam_role_policy_attachment   → glues the policy to the role
+aws_iam_role                     → the role that gets the permissions
+```
+
+### Why AWS-managed services also need a trust policy
+Services like VPC Flow Logs, Lambda, etc. run on your behalf but cannot use access keys.
+The only way they get permissions is by assuming your IAM role.
+So you must explicitly allow them in the trust policy:
+- `ec2.amazonaws.com`           → so your EC2 instance can read secrets / write S3
+- `ecs-tasks.amazonaws.com`     → so your ECS container can access RDS / secrets
+- `vpc-flow-logs.amazonaws.com` → so the Flow Logs service can write to CloudWatch
+
+### AWS Console hides this split
+Step 1 "Select trusted entity" → sets trust policy | Step 2 "Add permissions" → attaches permission policy.
+Feels like one thing in the console. In Terraform you define both explicitly.

@@ -8,7 +8,7 @@ This file gives Claude (and any AI assistant) persistent context about this proj
 
 **Project name:** Strata
 **Goal:** Build a production-grade, multi-tier AWS infrastructure using Terraform — flat first, then multi-environment, then modularized.
-**Region:** `us-east-1`
+**Region:** `ap-south-1`
 **Terraform version:** `>= 1.9.0, < 2.0.0`
 **AWS Provider version:** `~> 6.46`
 
@@ -16,7 +16,7 @@ This file gives Claude (and any AI assistant) persistent context about this proj
 
 ## Architecture Summary
 
-Three-tier network layout across 3 AZs (`us-east-1a`, `us-east-1b`, `us-east-1c`):
+Three-tier network layout across 3 AZs (`ap-south-1a`, `ap-south-1b`, `ap-south-1c`):
 
 | Tier    | Resources                          | Subnets        |
 |---------|------------------------------------|----------------|
@@ -24,7 +24,7 @@ Three-tier network layout across 3 AZs (`us-east-1a`, `us-east-1b`, `us-east-1c`
 | Private | App Servers (EC2/ASG), ECS Fargate | 3 AZs          |
 | Data    | RDS PostgreSQL, ElastiCache        | 2 AZs          |
 
-**NAT Gateways:** Only 2 — in `us-east-1a` and `us-east-1b`. `us-east-1c` private subnet routes through `us-east-1b` NAT. This is captured in the `az_to_nat` local map in `locals.tf`.
+**NAT Gateways:** Only 2 — in `ap-south-1a` and `ap-south-1b`. `ap-south-1c` private subnet routes through `ap-south-1b` NAT. This is captured in the `az_to_nat` local map in `locals.tf`.
 
 ---
 
@@ -60,9 +60,9 @@ When infrastructure has uneven topology (e.g., 3 subnets but only 2 NAT gateways
 ```hcl
 # az_to_nat map — maps every private AZ to its correct NAT GW AZ
 az_to_nat = {
-  "us-east-1a" = "us-east-1a"
-  "us-east-1b" = "us-east-1b"
-  "us-east-1c" = "us-east-1b"   # us-east-1c shares us-east-1b's NAT
+  "ap-south-1a" = "ap-south-1a"
+  "ap-south-1b" = "ap-south-1b"
+  "ap-south-1c" = "ap-south-1b"   # ap-south-1c shares ap-south-1b's NAT
 }
 ```
 

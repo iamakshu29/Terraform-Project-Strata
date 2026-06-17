@@ -8,7 +8,7 @@
 - [x] Public Subnets (3 AZs, AZ as key)
 - [x] Private Subnets (3 AZs, AZ as key)
 - [x] Data Subnets (2 AZs, AZ as key)
-- [x] NAT Gateways (2, in us-east-1a and us-east-1b)
+- [x] NAT Gateways (2, in ap-south-1a and ap-south-1b)
 - [x] Elastic IPs for NAT Gateways
 - [x] Public Route Table + Routes (IGW)
 - [x] Private Route Tables + Routes (NAT, per AZ with az_to_nat local map)
