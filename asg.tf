@@ -1,3 +1,9 @@
+# Instance profile — required for EC2 to use the role
+resource "aws_iam_instance_profile" "strata" {
+  name     = "my-ec2-instance-profile"
+  role     = aws_iam_role.strata[var.role_names.ec2_role_key].name
+}
+
 resource "aws_launch_template" "strata" {
   name_prefix   = "strata-app-lt"
   image_id      = data.aws_ami.ubuntu.id
@@ -6,6 +12,9 @@ resource "aws_launch_template" "strata" {
   vpc_security_group_ids = [
     aws_security_group.strata_sg["ec2"].id
   ]
+  iam_instance_profile {
+    arn = aws_iam_instance_profile.strata.arn
+  }
 
   # Configuring Volume
   block_device_mappings {

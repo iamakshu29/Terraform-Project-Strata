@@ -8,19 +8,69 @@
 
 # NEEDS REWORK
 
-resource "aws_iam_role" "strata_app" {
-  for_each = var.iam_policy
+locals {
+  policies = merge([
+        for role_name, policy in var.iam_policy : {
+            for policy_name, policy_element in policy:
+            "${role_name}-${policy_name}" => {
+                role_name    = role_name    # role key — used to look up aws_iam_role.strata
+                policy_name = policy_name
+                policy_elements = policy_element
+            }
+        }
+    ]...)
+
+  #### The map merges out as
+
+  # policies = {
+  #   "role_ecs_task-s3_read_write" = {
+  #     role_name = "role_ecs_task"
+  #     policy_name = "s3_read_write"
+  #     policy_elements = {
+  #       sid    = "S3ReadWrite"
+  #       effect = "Allow"
+  #       actions = [
+  #         "s3:GetObject",
+  #         "s3:WriteObject"
+  #       ]
+  #       resources = ["arn:aws:s3:::my-bucket/*"]
+  #     }
+
+  #   },"role_ecs_task-read_secrets" = {}, "role_ecs_task-read_cloudwatch_logs" = {},
+  #     "role_ec2_instance-read_cloudwatch_logs" = {}
+  # }
+}
+
+data "aws_iam_policy_document" "policy" {
+  for_each = local.policies
+  statement {
+    sid       = each.value.policy_elements.sid
+    effect    = each.value.policy_elements.effect
+    actions   = each.value.policy_elements.actions
+    resources = each.value.policy_elements.resources
+  }
+}
+
+# Create IAM policy, for allowing an EC2 instance, ECS task, or an application to read the secret credentials
+resource "aws_iam_policy" "strata_policy" {
+  for_each    = local.policies
+  name        = "strata-${each.value.policy_name}"
+  policy      = data.aws_iam_policy_document.policy[each.key].json # need to check this
+}
+
+resource "aws_iam_role" "strata" {
+  for_each = var.assume_role_policy
   name     = each.key
 
   assume_role_policy = jsonencode({
-    Version = "2012-10-17"
+    Version = each.value.Version
     Statement = [
       {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Sid    = ""
+        Action = each.value.Action
+        Effect = each.value.Effect
+        Sid    = each.value.Sid
         Principal = {
-          Service = "ec2.amazonaws.com"
+          Service = each.value.Principal_Service
         }
       },
     ]
@@ -29,48 +79,9 @@ resource "aws_iam_role" "strata_app" {
   tags = local.tags
 }
 
-locals {
-  policies = merge([
-        for res_name, policy in var.iam_policy : {
-            for policy_name, policy_type in policy:
-            "${res_name}-${policy_name}" => {
-                res_name    = res_name    # role key — used to look up aws_iam_role.strata_app
-                policy_name = policy_name
-                policy_type = policy_type
-            }
-        }
-    ]...)
-}
-
-data "aws_iam_policy_document" "policy" {
-  for_each = local.policies
-  statement {
-    sid       = each.value.policy_type.sid
-    effect    = each.value.policy_type.effect
-    actions   = each.value.policy_type.actions
-    resources = each.value.policy_type.resources
-  }
-}
-
-# Create IAM policy, for allowing an EC2 instance, ECS task, or an application to read the secret credentials
-resource "aws_iam_policy" "strata_policy" {
-  for_each    = local.policies
-  name        = "strata-${each.value.policy_name}"
-  policy      = data.aws_iam_policy_document.policy[each.key].json
-}
-
-
 # Controls who can access the secret at the secret level
 resource "aws_iam_role_policy_attachment" "strata-attach-policy" {
   for_each   = local.policies
-  role       = aws_iam_role.strata_app[each.value.res_name].name
+  role       = aws_iam_role.strata[each.value.role_name].name
   policy_arn = aws_iam_policy.strata_policy[each.key].arn
 }
-
-# Instance profile — required for EC2 to use the role
-resource "aws_iam_instance_profile" "strata" {
-  name     = "ec2-polcy"
-  role     = aws_iam_role.strata_app.arn
-}
-
-# On EC2 iam_instance_profile = aws_iam_instance_profile.strata_app.name

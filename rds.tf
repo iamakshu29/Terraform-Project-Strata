@@ -1,14 +1,14 @@
 resource "aws_db_instance" "strata" {
-  allocated_storage          = try(var.rds.allocated_storage, 50)
-  auto_minor_version_upgrade = try(var.rds.auto_minor_version_upgrade, false)
-  backup_retention_period    = try(var.rds.backup_retention_period, 7)
+  allocated_storage          = var.rds.allocated_storage
+  auto_minor_version_upgrade = var.rds.auto_minor_version_upgrade
+  backup_retention_period    = var.rds.backup_retention_period
   identifier                 = var.rds.identifier
-  multi_az                   = try(var.rds.multi_az, true)
-  publicly_accessible        = try(var.rds.publicly_accessible, false)
-  deletion_protection        = try(var.rds.deletion_protection, true)
-  storage_encrypted          = try(var.rds.storage_encrypted, true)
-  skip_final_snapshot        = try(var.rds.skip_final_snapshot, false) # true for Prod only
-  apply_immediately          = try(var.rds.apply_immediately, false)
+  multi_az                   = var.rds.multi_az
+  publicly_accessible        = var.rds.publicly_accessible
+  deletion_protection        = var.rds.deletion_protection
+  storage_encrypted          = var.rds.storage_encrypted
+  skip_final_snapshot        = var.rds.skip_final_snapshot 
+  apply_immediately          = var.rds.apply_immediately
   instance_class             = var.rds.instance_class
   engine_version             = var.rds.engine_version
   engine                     = var.rds.engine

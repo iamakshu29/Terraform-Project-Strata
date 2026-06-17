@@ -8,57 +8,57 @@ vpc = {
 
 # Subnet Types
 public_subnets = {
-  "us-east-1a" = {
+  "ap-south-1a" = {
     cidr = "10.0.1.0/24"
-    az   = "us-east-1a"
+    az   = "ap-south-1a"
   }
 
-  "us-east-1b" = {
+  "ap-south-1b" = {
     cidr = "10.0.2.0/24"
-    az   = "us-east-1b"
+    az   = "ap-south-1b"
   }
 
-  "us-east-1c" = {
+  "ap-south-1c" = {
     cidr = "10.0.3.0/24"
-    az   = "us-east-1c"
+    az   = "ap-south-1c"
   }
 }
 
 private_subnets = {
-  "us-east-1a" = {
+  "ap-south-1a" = {
     cidr = "10.0.11.0/24"
-    az   = "us-east-1a"
+    az   = "ap-south-1a"
   }
 
-  "us-east-1b" = {
+  "ap-south-1b" = {
     cidr = "10.0.15.0/24"
-    az   = "us-east-1b"
+    az   = "ap-south-1b"
   }
 
-  "us-east-1c" = {
+  "ap-south-1c" = {
     cidr = "10.0.19.0/24"
-    az   = "us-east-1c"
+    az   = "ap-south-1c"
   }
 }
 
 data_subnets = {
-  "us-east-1a" = {
+  "ap-south-1a" = {
     cidr = "10.0.101.0/24"
-    az   = "us-east-1a"
+    az   = "ap-south-1a"
   }
 
-  "us-east-1b" = {
+  "ap-south-1b" = {
     cidr = "10.0.102.0/24"
-    az   = "us-east-1b"
+    az   = "ap-south-1b"
   }
 
-  "us-east-1c" = {
+  "ap-south-1c" = {
     cidr = "10.0.103.0/24"
-    az   = "us-east-1c"
+    az   = "ap-south-1c"
   }
 }
 
-nat_gateway_azs = ["us-east-1a", "us-east-1b"]
+nat_gateway_azs = ["ap-south-1a", "ap-south-1b"]
 
 # NACL Rules for Subnets
 public_nacl_rules = {
@@ -69,6 +69,7 @@ public_nacl_rules = {
       action    = "allow"
       from_port = 80
       to_port   = 80
+      cidr_block = "0.0.0.0/0"
     }
     ingress_2 = {
       protocol  = "tcp"
@@ -76,6 +77,7 @@ public_nacl_rules = {
       action    = "allow"
       from_port = 443
       to_port   = 443
+      cidr_block = "0.0.0.0/0"
     }
   }
 
@@ -84,9 +86,9 @@ public_nacl_rules = {
       protocol   = "tcp"
       rule_no    = 100
       action     = "allow"
-      cidr_block = "0.0.0.0/0"
       from_port  = 1024
       to_port    = 65535
+      cidr_block = "0.0.0.0/0"
     }
   }
 }
@@ -97,18 +99,18 @@ private_nacl_rules = {
       protocol   = "tcp"
       rule_no    = 100
       action     = "allow"
-      cidr_block = "0.0.0.0/0"
       from_port  = 80
       to_port    = 80
+      cidr_block = "0.0.0.0/0"
     }
 
     ingress_2 = {
       protocol   = "tcp"
       rule_no    = 101
       action     = "allow"
-      cidr_block = "0.0.0.0/0"
       from_port  = 443
       to_port    = 443
+      cidr_block = "0.0.0.0/0"
     }
   }
 
@@ -117,9 +119,9 @@ private_nacl_rules = {
       protocol   = "tcp"
       rule_no    = 100
       action     = "allow"
-      cidr_block = "0.0.0.0/0"
       from_port  = 1024
       to_port    = 65535
+      cidr_block = "0.0.0.0/0"
     }
   }
 }
@@ -132,6 +134,7 @@ data_nacl_rules = {
       action    = "allow"
       from_port = 80
       to_port   = 80
+      cidr_block = "0.0.0.0/0"
     }
 
     ingress_2 = {
@@ -140,6 +143,7 @@ data_nacl_rules = {
       action    = "allow"
       from_port = 443
       to_port   = 443
+      cidr_block = "0.0.0.0/0"
     }
   }
 
@@ -148,51 +152,49 @@ data_nacl_rules = {
       protocol   = "tcp"
       rule_no    = 100
       action     = "allow"
-      cidr_block = "0.0.0.0/0"
       from_port  = 1024
       to_port    = 65535
+      cidr_block = "0.0.0.0/0"
     }
   }
 }
 
-
 route = {
   public_routes = {
-    us-east-1a = {
+    ap-south-1a = {
       destination_cidr = "10.0.1.0/24"
     }
-    us-east-1b = {
+    ap-south-1b = {
       destination_cidr = "10.0.2.0/24"
 
     }
-    us-east-1c = {
+    ap-south-1c = {
       destination_cidr = "10.0.3.0/24"
     }
   }
   private_routes = {
-    us-east-1a = {
+    ap-south-1a = {
       destination_cidr = "10.0.11.0/24"
     }
-    us-east-1b = {
+    ap-south-1b = {
       destination_cidr = "10.0.15.0/24"
     }
-    us-east-1c = {
+    ap-south-1c = {
       destination_cidr = "10.0.19.0/24"
     }
   }
   data_routes = {
-    us-east-1a = {
+    ap-south-1a = {
       destination_cidr = "10.0.101.0/24"
     }
-    us-east-1b = {
+    ap-south-1b = {
       destination_cidr = "10.0.102.0/24"
     }
-    us-east-1c = {
+    ap-south-1c = {
       destination_cidr = "10.0.103.0/24"
     }
   }
 }
-
 
 # ---------------------------------------------------
 security_group = {
@@ -289,7 +291,7 @@ rds = {
   publicly_accessible        = false
   deletion_protection        = true
   storage_encrypted          = true
-  skip_final_snapshot        = false
+  skip_final_snapshot        = false # true for Prod only
   apply_immediately          = false
   engine_version             = "16.2"
   instance_class             = "db.t3.medium" # "db.t3.medium" for dev, "db.r6g.large" minimum for prod
@@ -311,7 +313,7 @@ secrets = {
 # ---------------------------------------------------------
 aws_bastian_instance = {
   instance_type               = "t2.medium"
-  subnet_az                   = "us-east-1a"
+  subnet_az                   = "ap-south-1a"
   subnet_type                 = "public"
   associate_public_ip_address = true
   ebs_size                    = 40
@@ -319,7 +321,7 @@ aws_bastian_instance = {
 
 launch_template = {
   instance_type               = "t2.xa.large"
-  subnet_az                   = "us-east-1b"
+  subnet_az                   = "ap-south-1b"
   subnet_type                 = "private"
   associate_public_ip_address = false
   volume_size = 50
@@ -341,6 +343,7 @@ asg = {
 
 # }
 
+# What can the role do
 iam_policy = {
   "role_ecs_task" = {
     "s3_read_write" = {
@@ -356,9 +359,9 @@ iam_policy = {
       sid      = "ReadSecrets"
       effect   = "Allow"
       actions  = ["secretsmanager:GetSecretValue"]
-      resources = ["arn:aws:secretsmanager:us-east-1:123456789012:secret:*"]
+      resources = ["arn:aws:secretsmanager:ap-south-1:123456789012:secret:*"]
     }
-    "cloudwatch_logs" = {
+    "read_cloudwatch_logs" = {
       sid      = "ReadLog"
       effect   = "Allow"
       actions  = ["ssm:*"]
@@ -370,19 +373,96 @@ iam_policy = {
       actions  = ["ssm:*"]
       resources = ["*"]
     }
+    "rds_access-rw" = {
+      sid = "RDSReadWrite"
+      effect = "Allow"
+      actions = ["rds-db:connect"]
+      resources = ["arn:aws:rds-db:ap-south-1:123456789012:dbuser:db-ABC123XYZ789/app_user"]
+    }
   }
   role_ec2_instance = {
-    "cloudwatch_agent" = {
+    "read_cloudwatch_logs" = {
       sid      = "ReadLogs"
       effect   = "Allow"
       actions  = ["ssm:*"]
-      resources = []
+      resources = ["*"]
     }
     "ssm_managed_instance" = {
       sid      = "ManageSSM"
       effect   = "Allow"
       actions  = ["ssm:*"]
       resources = ["*"]
+      # All CloudWatch log groups/streams in a specific region & account
+      # resources = ["arn:aws:logs:ap-south-1:123456789012:log-group:*"]
+
+      # Or all CloudWatch logs across all regions/accounts (still scoped to logs service)
+      # resources = ["arn:aws:logs:*:*:*"]
+    }
+    "s3_read_write" = {
+      sid    = "S3ReadWrite"
+      effect = "Allow"
+      actions = [
+        "s3:GetObject",
+        "s3:PutObject"
+      ]
+      resources = ["arn:aws:s3:::my-bucket/*"]
+    }
+    "read_secrets" = {
+      sid      = "ReadSecrets"
+      effect   = "Allow"
+      actions  = ["secretsmanager:GetSecretValue"]
+      resources = ["arn:aws:secretsmanager:ap-south-1:123456789012:secret:*"]
+    }
+    "rds_access-rw" = {
+      sid = "RDSReadWrite"
+      effect = "Allow"
+      actions = ["rds-db:connect"]
+      resources = ["arn:aws:rds-db:ap-south-1:123456789012:dbuser:db-ABC123XYZ789/app_user"]
     }
   }
+  role_vpc_flow_log = {
+    "manage_vpc_glow_log" = {
+      sid    = "VPCLogAcess"
+      effect = "Allow"
+      actions = [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents",
+        "logs:DescribeLogGroups",
+        "logs:DescribeLogStreams"
+      ]
+      resources = ["*"]
+    }
+  }
+}
+
+# who can use the role 
+assume_role_policy = {
+  role_ec2_instance = {
+    Version = "2012-10-17"
+    Action = "sts:AssumeRole"
+    Effect = "Allow"
+    Sid    = ""
+    Principal_Service = "ec2.amazonaws.com"
+  }
+  role_ecs_task = {
+    Version = "2012-10-17"
+    Action = "sts:AssumeRole"
+    Effect = "Allow"
+    Sid    = ""
+    Principal_Service = "ecs-tasks.amazonaws.com"
+  }
+  role_vpc_flow_log = {
+    Version = "2012-10-17"
+    Action = "sts:AssumeRole"
+    Effect = "Allow"
+    Sid    = ""
+    Principal_Service = "vpc-flow-logs.amazonaws.com"
+  }
+}
+
+role_names = {
+  ec2_role_key = "role_ec2_instance"
+  ecs_role_key = "role_ecs_task"
+  vpc_flow_log_role_key = "role_vpc_flow_log"
 }

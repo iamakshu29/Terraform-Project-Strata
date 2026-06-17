@@ -1,3 +1,5 @@
+# Public Routes and Route Table
+
 resource "aws_route_table" "strata_public" {
   vpc_id = aws_vpc.strata.id
 }
@@ -16,11 +18,11 @@ resource "aws_route_table_association" "strata_public" {
   route_table_id = aws_route_table.strata_public.id
 }
 
-
-
 resource "aws_route_table" "strata_private" {
   vpc_id = local.vpc_cidr
 }
+
+# Private Routes and Route Table
 
 resource "aws_route" "strata_private" {
   for_each = var.route.private_routes
@@ -38,7 +40,7 @@ resource "aws_route_table_association" "strata_private" {
   route_table_id = aws_route_table.strata_private.id
 }
 
-
+# Data Routes and Route Table
 
 resource "aws_route_table" "strata_data" {
   vpc_id = local.vpc_cidr

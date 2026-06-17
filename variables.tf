@@ -1,6 +1,7 @@
 variable "aws_region" {
   type = string
-  default = "us-east-1"
+  description = "Region Name"
+  default = "ap-south-1"
 }
 
 variable "env_tag" {
@@ -10,31 +11,44 @@ variable "env_tag" {
 }
 
 variable "vpc" {
-  type        = map(any)
+  type        = object({cidr = string})
   description = "This is a correct CIDR which will not work as AWS, Always use terraform.tfvars"
 }
 
+# ----------------------------------------------------------------------
+
 # ALB, NAT GW, Bastion
 variable "public_subnets" {
-  type        = map(any)
-  description = "CIDRs for public subnet"
+  type        = map(object({
+    cidr = string
+    az = string
+  }))
+  description = "Configuration map for public subnets indexed by availability zone keys"
 }
 
 # ECS Fargate, ASG/EC2
 variable "private_subnets" {
-  type        = map(any)
-  description = "CIDRs for private subnet"
+  type        = map(object({
+    cidr = string
+    az = string
+  }))
+  description = "Configuration map for private subnets indexed by availability zone keys"
 }
 
 # RDS, ElastiCache
 variable "data_subnets" {
-  type        = map(any)
-  description = "CIDRs for data subnet"
+  type        = map(object({
+    cidr = string
+    az = string
+  }))
+  description = "Configuration map for data subnets indexed by availability zone keys"
 }
+
+# ----------------------------------------------------------------------
 
 variable "nat_gateway_azs" {
   type        = list(string)
-  description = "used to create nat and eip allocation"
+  description = "Containes AZ to create NAT GW"
 }
 
 # ingress:
@@ -44,17 +58,71 @@ variable "nat_gateway_azs" {
 # egress:
 #   allow TCP destination ports 1024-65535 to anywhere
 variable "public_nacl_rules" {
-  type        = map(any)
+  type        = object({
+    ingress = map(object({
+      protocol   = string
+      rule_no    = number
+      action     = string
+      from_port  = number
+      to_port    = number
+      cidr_block = string
+    }))
+
+    egress = map(object({
+      protocol   = string
+      rule_no    = number
+      action     = string
+      from_port  = number
+      to_port    = number
+      cidr_block = string
+    }))
+  })
   description = "Public NACL Attributes"
 }
 
 variable "private_nacl_rules" {
-  type        = map(any)
+  type        = object({
+    ingress = map(object({
+      protocol   = string
+      rule_no    = number
+      action     = string
+      from_port  = number
+      to_port    = number
+      cidr_block = string
+    }))
+
+    egress = map(object({
+      protocol   = string
+      rule_no    = number
+      action     = string
+      from_port  = number
+      to_port    = number
+      cidr_block = string
+    }))
+  })
   description = "Private NACL Attributes"
 }
 
 variable "data_nacl_rules" {
-  type        = map(any)
+  type        = object({
+    ingress = map(object({
+      protocol   = string
+      rule_no    = number
+      action     = string
+      from_port  = number
+      to_port    = number
+      cidr_block = string
+    }))
+
+    egress = map(object({
+      protocol   = string
+      rule_no    = number
+      action     = string
+      from_port  = number
+      to_port    = number
+      cidr_block = string
+    }))
+  })
   description = "Data NACL Attributes"
 }
 
@@ -63,9 +131,13 @@ variable "nacl_subnet_association" {
   default = {}
 }
 
+# ----------------------------------------------------------------------
+
 # variable "cloudwatch" {
 
 # }
+
+# ----------------------------------------------------------------------
 
 # variable "vpc_flow_logs" {
 
@@ -74,7 +146,21 @@ variable "nacl_subnet_association" {
 # ----------------------------------------------------------------------
 
 variable "route" {
+  type = object({
+    public_routes = map(object({
+      destination_cidr = string
+    }))
 
+    private_routes = map(object({
+      destination_cidr = string
+    }))
+
+    data_routes = map(object({
+      destination_cidr = string
+    }))
+  })
+
+  description = "Defining Public, Private and Data Routes"
 }
 
 # variable "route_table" {
@@ -92,6 +178,7 @@ variable "security_group" {
 }
 
 # ----------------------------------------------------------------------------
+
 variable "rds" {
   type = object({
     allocated_storage          = number
@@ -109,7 +196,11 @@ variable "rds" {
     engine                     = string
     db_name                    = string
   })
+  description = "RDS values"
 }
+
+# ----------------------------------------------------------------------
+
 
 variable "kms_key" {
   type = object({
@@ -121,11 +212,7 @@ variable "kms_key" {
 # ----------------------------------------------------------------------
 variable "secrets" {
   type = map(string)
-
-  default = {
-    key1 = "value1"
-    key2 = "value2"
-  }
+  description = "RDS username and password"
 }
 
 # ----------------------------------------------------------------------
@@ -144,9 +231,30 @@ variable "asg" {
 # ----------------------------------------------------------------------
 
 variable "iam_policy" {
-
+  type = map(map(object({
+    sid = string
+    effect = string
+    actions = list(string)
+    resources = list(string)
+  })))
 }
 
-# variable "iam_role" {
+variable "assume_role_policy" {
+  type = map(object({
+    Version = string
+    Action = string
+    Effect = string
+    Sid = string
+    Principal_Service = string 
+  }))
+}
 
-# }
+variable "role_names" {
+  type = object({
+    ec2_role_key = string
+    ecs_role_key = string
+    vpc_flow_log_role_key = string 
+  })
+}
+
+# ----------------------------------------------------------------------

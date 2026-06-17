@@ -8,9 +8,9 @@ locals {
 
   # For creating route as per nat available in azs
   az_to_nat = {
-    "us-east-1a" = "us-east-1a"
-    "us-east-1b" = "us-east-1b"
-    "us-east-1c" = "us-east-1b" # as I create NAT in only 2 regions
+    "ap-south-1a" = "ap-south-1a"
+    "ap-south-1b" = "ap-south-1b"
+    "ap-south-1c" = "ap-south-1b" # as I create NAT in only 2 regions
   }
 
 }
