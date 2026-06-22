@@ -3,6 +3,9 @@
 > Scope: Flat code review only. No modularization or multi-env comments.
 > Focus: Bugs, security gaps, bad practices, naming issues.
 
+
+> Add Life Cycle Configuration if required.
+> Depends_on if required
 ---
 
 ## 1. vpc.tf -> FIXED
