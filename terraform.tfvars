@@ -64,19 +64,19 @@ nat_gateway_azs = ["ap-south-1a", "ap-south-1b"]
 public_nacl_rules = {
   ingress = {
     ingress_1 = {
-      protocol  = "tcp"
-      rule_no   = 100
-      action    = "allow"
-      from_port = 80
-      to_port   = 80
+      protocol   = "tcp"
+      rule_no    = 100
+      action     = "allow"
+      from_port  = 80
+      to_port    = 80
       cidr_block = "0.0.0.0/0"
     }
     ingress_2 = {
-      protocol  = "tcp"
-      rule_no   = 101
-      action    = "allow"
-      from_port = 443
-      to_port   = 443
+      protocol   = "tcp"
+      rule_no    = 101
+      action     = "allow"
+      from_port  = 443
+      to_port    = 443
       cidr_block = "0.0.0.0/0"
     }
   }
@@ -129,20 +129,20 @@ private_nacl_rules = {
 data_nacl_rules = {
   ingress = {
     ingress_1 = {
-      protocol  = "tcp"
-      rule_no   = 100
-      action    = "allow"
-      from_port = 80
-      to_port   = 80
+      protocol   = "tcp"
+      rule_no    = 100
+      action     = "allow"
+      from_port  = 80
+      to_port    = 80
       cidr_block = "0.0.0.0/0"
     }
 
     ingress_2 = {
-      protocol  = "tcp"
-      rule_no   = 101
-      action    = "allow"
-      from_port = 443
-      to_port   = 443
+      protocol   = "tcp"
+      rule_no    = 101
+      action     = "allow"
+      from_port  = 443
+      to_port    = 443
       cidr_block = "0.0.0.0/0"
     }
   }
@@ -324,10 +324,10 @@ launch_template = {
   subnet_az                   = "ap-south-1b"
   subnet_type                 = "private"
   associate_public_ip_address = false
-  volume_size = 50
-  volume_type = "gp3"
-  encrypted = true
-  deletion_on_termination = true
+  volume_size                 = 50
+  volume_type                 = "gp3"
+  encrypted                   = true
+  deletion_on_termination     = true
 }
 
 asg = {
@@ -356,41 +356,41 @@ iam_policy = {
       resources = ["arn:aws:s3:::my-bucket/*"]
     }
     "read_secrets" = {
-      sid      = "ReadSecrets"
-      effect   = "Allow"
-      actions  = ["secretsmanager:GetSecretValue"]
+      sid       = "ReadSecrets"
+      effect    = "Allow"
+      actions   = ["secretsmanager:GetSecretValue"]
       resources = ["arn:aws:secretsmanager:ap-south-1:123456789012:secret:*"]
     }
     "read_cloudwatch_logs" = {
-      sid      = "ReadLog"
-      effect   = "Allow"
-      actions  = ["ssm:*"]
+      sid       = "ReadLog"
+      effect    = "Allow"
+      actions   = ["ssm:*"]
       resources = ["*"]
     }
     "x-ray_write" = {
-      sid      = "WriteXRay"
-      effect   = "Allow"
-      actions  = ["ssm:*"]
+      sid       = "WriteXRay"
+      effect    = "Allow"
+      actions   = ["ssm:*"]
       resources = ["*"]
     }
     "rds_access-rw" = {
-      sid = "RDSReadWrite"
-      effect = "Allow"
-      actions = ["rds-db:connect"]
+      sid       = "RDSReadWrite"
+      effect    = "Allow"
+      actions   = ["rds-db:connect"]
       resources = ["arn:aws:rds-db:ap-south-1:123456789012:dbuser:db-ABC123XYZ789/app_user"]
     }
   }
   role_ec2_instance = {
     "read_cloudwatch_logs" = {
-      sid      = "ReadLogs"
-      effect   = "Allow"
-      actions  = ["ssm:*"]
+      sid       = "ReadLogs"
+      effect    = "Allow"
+      actions   = ["ssm:*"]
       resources = ["*"]
     }
     "ssm_managed_instance" = {
-      sid      = "ManageSSM"
-      effect   = "Allow"
-      actions  = ["ssm:*"]
+      sid       = "ManageSSM"
+      effect    = "Allow"
+      actions   = ["ssm:*"]
       resources = ["*"]
       # All CloudWatch log groups/streams in a specific region & account
       # resources = ["arn:aws:logs:ap-south-1:123456789012:log-group:*"]
@@ -408,15 +408,15 @@ iam_policy = {
       resources = ["arn:aws:s3:::my-bucket/*"]
     }
     "read_secrets" = {
-      sid      = "ReadSecrets"
-      effect   = "Allow"
-      actions  = ["secretsmanager:GetSecretValue"]
+      sid       = "ReadSecrets"
+      effect    = "Allow"
+      actions   = ["secretsmanager:GetSecretValue"]
       resources = ["arn:aws:secretsmanager:ap-south-1:123456789012:secret:*"]
     }
     "rds_access-rw" = {
-      sid = "RDSReadWrite"
-      effect = "Allow"
-      actions = ["rds-db:connect"]
+      sid       = "RDSReadWrite"
+      effect    = "Allow"
+      actions   = ["rds-db:connect"]
       resources = ["arn:aws:rds-db:ap-south-1:123456789012:dbuser:db-ABC123XYZ789/app_user"]
     }
   }
@@ -439,30 +439,95 @@ iam_policy = {
 # who can use the role 
 assume_role_policy = {
   role_ec2_instance = {
-    Version = "2012-10-17"
-    Action = "sts:AssumeRole"
-    Effect = "Allow"
-    Sid    = ""
+    Version           = "2012-10-17"
+    Action            = "sts:AssumeRole"
+    Effect            = "Allow"
+    Sid               = ""
     Principal_Service = "ec2.amazonaws.com"
   }
   role_ecs_task = {
-    Version = "2012-10-17"
-    Action = "sts:AssumeRole"
-    Effect = "Allow"
-    Sid    = ""
+    Version           = "2012-10-17"
+    Action            = "sts:AssumeRole"
+    Effect            = "Allow"
+    Sid               = ""
     Principal_Service = "ecs-tasks.amazonaws.com"
   }
   role_vpc_flow_log = {
-    Version = "2012-10-17"
-    Action = "sts:AssumeRole"
-    Effect = "Allow"
-    Sid    = ""
+    Version           = "2012-10-17"
+    Action            = "sts:AssumeRole"
+    Effect            = "Allow"
+    Sid               = ""
     Principal_Service = "vpc-flow-logs.amazonaws.com"
   }
 }
 
 role_names = {
-  ec2_role_key = "role_ec2_instance"
-  ecs_role_key = "role_ecs_task"
+  ec2_role_key          = "role_ec2_instance"
+  ecs_role_key          = "role_ecs_task"
   vpc_flow_log_role_key = "role_vpc_flow_log"
+}
+
+cloudwatch = {
+  retention_in_days = 30
+}
+
+s3 = {
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+  versioning_status       = "Enabled"
+  IA_transition_days      = 30
+  glacier_transiton_days  = 90
+  delete_data_after       = 365
+}
+
+s3_logging = {
+
+}
+
+# ssm_paramter_store = {
+
+# }
+
+
+# change dim_key and value
+metrics = {
+  metric_1 = {
+    metric_name = "HTTPCode_ELB_5XX_Rate"
+    namespace   = "AWS/ApplicationELB"
+    period      = 120
+    stat        = "Average"
+    # for percentage --extended-statistics p99 p95 p50.
+    unit = "Count"
+    dimension_key = LoadBalancer
+    dimension_value = "app/web"
+  }
+  metric_2 = {
+    metric_name = "RDS_Connections_Count"
+    namespace   = "AWS/RDS"
+    period      = 120
+    stat        = "Sum"
+    unit        = "Count"
+    dimension_key = LoadBalancer
+    dimension_value = "app/web"
+  }
+  metric_3 = {
+    metric_name = "ECS_CPU_Utilization"
+    namespace   = "AWS/ECS"
+    period      = 120
+    stat        = "Sum"
+    unit        = "Count"
+    dimension_key = LoadBalancer
+    dimension_value = "app/web"
+  }
+  metric_4 = {
+    metric_name = "ElastiCache_Redis_Memory_Utilization"
+    namespace   = "AWS/RedisCache"
+    period      = 120
+    stat        = "Average"
+    unit        = "Count"
+    dimension_key = LoadBalancer
+    dimension_value = "app/web"
+  }
 }

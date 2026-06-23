@@ -10,15 +10,15 @@
 
 locals {
   policies = merge([
-        for role_name, policy in var.iam_policy : {
-            for policy_name, policy_element in policy:
-            "${role_name}-${policy_name}" => {
-                role_name    = role_name    # role key — used to look up aws_iam_role.strata
-                policy_name = policy_name
-                policy_elements = policy_element
-            }
-        }
-    ]...)
+    for role_name, policy in var.iam_policy : {
+      for policy_name, policy_element in policy :
+      "${role_name}-${policy_name}" => {
+        role_name       = role_name # role key — used to look up aws_iam_role.strata
+        policy_name     = policy_name
+        policy_elements = policy_element
+      }
+    }
+  ]...)
 
   #### The map merges out as
 
@@ -53,9 +53,9 @@ data "aws_iam_policy_document" "policy" {
 
 # Create IAM policy, for allowing an EC2 instance, ECS task, or an application to read the secret credentials
 resource "aws_iam_policy" "strata_policy" {
-  for_each    = local.policies
-  name        = "strata-${each.value.policy_name}"
-  policy      = data.aws_iam_policy_document.policy[each.key].json # need to check this
+  for_each = local.policies
+  name     = "strata-${each.value.policy_name}"
+  policy   = data.aws_iam_policy_document.policy[each.key].json # need to check this
 }
 
 resource "aws_iam_role" "strata" {

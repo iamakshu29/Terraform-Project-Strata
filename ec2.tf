@@ -42,7 +42,7 @@ resource "aws_ebs_volume" "strata_data_vol" {
   availability_zone = var.aws_bastian_instance.subnet_az
   size              = var.aws_bastian_instance.ebs_size
   encrypted         = true
-  kms_key_id             = aws_kms_key.strata.arn
+  kms_key_id        = aws_kms_key.strata.arn
 
   tags = local.tags
 }

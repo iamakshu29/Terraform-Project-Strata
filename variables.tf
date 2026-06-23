@@ -1,7 +1,7 @@
 variable "aws_region" {
-  type = string
+  type        = string
   description = "Region Name"
-  default = "ap-south-1"
+  default     = "ap-south-1"
 }
 
 variable "env_tag" {
@@ -11,7 +11,7 @@ variable "env_tag" {
 }
 
 variable "vpc" {
-  type        = object({cidr = string})
+  type        = object({ cidr = string })
   description = "This is a correct CIDR which will not work as AWS, Always use terraform.tfvars"
 }
 
@@ -19,27 +19,27 @@ variable "vpc" {
 
 # ALB, NAT GW, Bastion
 variable "public_subnets" {
-  type        = map(object({
+  type = map(object({
     cidr = string
-    az = string
+    az   = string
   }))
   description = "Configuration map for public subnets indexed by availability zone keys"
 }
 
 # ECS Fargate, ASG/EC2
 variable "private_subnets" {
-  type        = map(object({
+  type = map(object({
     cidr = string
-    az = string
+    az   = string
   }))
   description = "Configuration map for private subnets indexed by availability zone keys"
 }
 
 # RDS, ElastiCache
 variable "data_subnets" {
-  type        = map(object({
+  type = map(object({
     cidr = string
-    az = string
+    az   = string
   }))
   description = "Configuration map for data subnets indexed by availability zone keys"
 }
@@ -58,7 +58,7 @@ variable "nat_gateway_azs" {
 # egress:
 #   allow TCP destination ports 1024-65535 to anywhere
 variable "public_nacl_rules" {
-  type        = object({
+  type = object({
     ingress = map(object({
       protocol   = string
       rule_no    = number
@@ -81,7 +81,7 @@ variable "public_nacl_rules" {
 }
 
 variable "private_nacl_rules" {
-  type        = object({
+  type = object({
     ingress = map(object({
       protocol   = string
       rule_no    = number
@@ -104,7 +104,7 @@ variable "private_nacl_rules" {
 }
 
 variable "data_nacl_rules" {
-  type        = object({
+  type = object({
     ingress = map(object({
       protocol   = string
       rule_no    = number
@@ -133,15 +133,10 @@ variable "nacl_subnet_association" {
 
 # ----------------------------------------------------------------------
 
-# variable "cloudwatch" {
-
-# }
-
-# ----------------------------------------------------------------------
-
-# variable "vpc_flow_logs" {
-
-# }
+variable "cloudwatch" {
+  type    = map(number)
+  default = {}
+}
 
 # ----------------------------------------------------------------------
 
@@ -211,7 +206,7 @@ variable "kms_key" {
 
 # ----------------------------------------------------------------------
 variable "secrets" {
-  type = map(string)
+  type        = map(string)
   description = "RDS username and password"
 }
 
@@ -232,29 +227,50 @@ variable "asg" {
 
 variable "iam_policy" {
   type = map(map(object({
-    sid = string
-    effect = string
-    actions = list(string)
+    sid       = string
+    effect    = string
+    actions   = list(string)
     resources = list(string)
   })))
 }
 
 variable "assume_role_policy" {
   type = map(object({
-    Version = string
-    Action = string
-    Effect = string
-    Sid = string
-    Principal_Service = string 
+    Version           = string
+    Action            = string
+    Effect            = string
+    Sid               = string
+    Principal_Service = string
   }))
 }
 
 variable "role_names" {
   type = object({
-    ec2_role_key = string
-    ecs_role_key = string
-    vpc_flow_log_role_key = string 
+    ec2_role_key          = string
+    ecs_role_key          = string
+    vpc_flow_log_role_key = string
   })
 }
 
 # ----------------------------------------------------------------------
+
+variable "s3" {
+  type = map(object({
+    block_public_acls       = bool
+    block_public_policy     = bool
+    ignore_public_acls      = bool
+    restrict_public_buckets = bool
+    versioning_status       = string
+    IA_transition_days      = number
+    glacier_transiton_days  = number
+    delete_data_after       = number
+  }))
+}
+
+variable "s3_logging" {
+
+}
+
+variable "metrics" {
+  type = map(any)
+}

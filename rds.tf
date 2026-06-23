@@ -1,4 +1,4 @@
-resource "aws_db_instance" "strata" {
+resource "aws_db_instance" "strata_db" {
   allocated_storage          = var.rds.allocated_storage
   auto_minor_version_upgrade = var.rds.auto_minor_version_upgrade
   backup_retention_period    = var.rds.backup_retention_period
@@ -7,7 +7,7 @@ resource "aws_db_instance" "strata" {
   publicly_accessible        = var.rds.publicly_accessible
   deletion_protection        = var.rds.deletion_protection
   storage_encrypted          = var.rds.storage_encrypted
-  skip_final_snapshot        = var.rds.skip_final_snapshot 
+  skip_final_snapshot        = var.rds.skip_final_snapshot
   apply_immediately          = var.rds.apply_immediately
   instance_class             = var.rds.instance_class
   engine_version             = var.rds.engine_version

@@ -1,14 +1,14 @@
 # Instance profile — required for EC2 to use the role
 resource "aws_iam_instance_profile" "strata" {
-  name     = "my-ec2-instance-profile"
-  role     = aws_iam_role.strata[var.role_names.ec2_role_key].name
+  name = "my-ec2-instance-profile"
+  role = aws_iam_role.strata[var.role_names.ec2_role_key].name
 }
 
 resource "aws_launch_template" "strata" {
   name_prefix   = "strata-app-lt"
   image_id      = data.aws_ami.ubuntu.id
   instance_type = var.launch_template.instance_type
-  key_name = aws_key_pair.strata_key.key_name # Using same key for bastion and pvt server for now
+  key_name      = aws_key_pair.strata_key.key_name # Using same key for bastion and pvt server for now
   vpc_security_group_ids = [
     aws_security_group.strata_sg["ec2"].id
   ]
@@ -22,14 +22,14 @@ resource "aws_launch_template" "strata" {
     device_name = "/dev/xvda"
 
     ebs {
-      volume_size           =  var.launch_template.volume_size    # Size in GB
-      volume_type           =  var.launch_template.volume_type # General Purpose SSD (gp3 is best practice)
-      encrypted             =  var.launch_template.encrypted
-      kms_key_id            =  aws_kms_key.strata.arn
-      delete_on_termination = var.launch_template.deletion_on_termination   # Cleans up the disk when ASG terminates the instance
+      volume_size           = var.launch_template.volume_size # Size in GB
+      volume_type           = var.launch_template.volume_type # General Purpose SSD (gp3 is best practice)
+      encrypted             = var.launch_template.encrypted
+      kms_key_id            = aws_kms_key.strata.arn
+      delete_on_termination = var.launch_template.deletion_on_termination # Cleans up the disk when ASG terminates the instance
     }
   }
-  
+
 }
 
 resource "aws_autoscaling_group" "strata" {
