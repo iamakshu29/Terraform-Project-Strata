@@ -1,8 +1,28 @@
+# depends_on = [aws_iam_role_policy.foo] — wrong reference, doesn't exist
+# aws_cloudwatch_log_group.example.name — should be strata_log_group
+# data.aws_region.current.region — attribute should be .name, and data "aws_region" "current" not declared in data.tf
+# execution_role_arn = "" and task_role_arn = "" — empty strings, need actual IAM role references
+# network_configuration subnets and security_groups are empty []
+
+# EFS
+resource "aws_efs_file_system" "strata_efs" {
+  for_each       = var.efs
+  creation_token = each.value.creation_token
+  encrypted      = each.value.encrypted
+  kms_key_id     = aws_kms_key.strata.id
+
+  lifecycle_policy {
+    transition_to_ia = each.value.transition_to_ia
+  }
+
+  tags = local.tags
+}
+
 # Logical cluster where the service runs.
 resource "aws_ecs_cluster" "strata_cluster" {
-  name = "strata-app-cluster"
-  # VPC is left
-  # subnet also
+  for_each = var.ecs_cluster
+
+  name = each.value.name
 
   setting {
     name  = "containerInsights"
@@ -11,57 +31,67 @@ resource "aws_ecs_cluster" "strata_cluster" {
 }
 
 resource "aws_service_discovery_http_namespace" "strata_ecs_namespace" {
-  name        = "development"
-  description = "example"
+  for_each = var.service_discovery
+
+  name        = each.value.name
+  description = each.value.description
 }
 
 resource "aws_ecs_task_definition" "service" {
   for_each = var.task_definitions
 
-  family                   = "service"
-  requires_compatibilities = ["FARGATE"]
-  network_mode = "awsvpc"
-  execution_role_arn = ""
-  task_role_arn = ""
-  
+  family                   = each.value.family
+  requires_compatibilities = each.value.requires_compatibilities
+  network_mode             = each.value.network_mode
+  execution_role_arn       = ""
+  task_role_arn            = ""
+  cpu                      = each.value.cpu
+  memory                   = each.value.memory
+
   container_definitions = jsonencode([
-    {
-      name      = each.value.name
-      image     = each.value.image
-      cpu       = each.value.cpu
-      memory    = each.value.memory
-      essential = each.value.essential
+    for c in each.value.tasks : {
+
+      name      = c.name
+      image     = c.image
+      cpu       = c.cpu
+      memory    = c.memory
+      essential = c.essential
       portMappings = [
         {
-          containerPort = each.value.containerPort
-          hostPort      = each.value.hostPort
+          containerPort = c.containerPort
+          hostPort      = c.hostPort
         }
       ]
     }
   ])
 
-  volume {
-    name = "service-storage"
+  dynamic "volume" {
+    for_each = each.value.volumes
 
-    efs_volume_configuration {
-      file_system_id = aws_efs_file_system.main.id
+    content {
+      name = volume.value.name
+
+      efs_volume_configuration {
+        file_system_id = aws_efs_file_system.strata_efs[volume.value.name].id
+      }
     }
   }
 }
 
 # References the cluster and task definition.
-resource "aws_ecs_service" "mongo" {
-  for_each = var.ecs
+resource "aws_ecs_service" "strata_service" {
+  for_each        = var.ecs_service
+
   name            = each.value.name
-  cluster         = aws_ecs_cluster.strata_cluster.id
-  task_definition = aws_ecs_task_definition.service[each.key].arn
+  cluster         = aws_ecs_cluster.strata_cluster[each.value.cluster_key].id
+  task_definition = aws_ecs_task_definition.service[each.value.task_key].arn
   desired_count   = each.value.desired_count
   depends_on      = [aws_iam_role_policy.foo]
-  launch_type = "FARGATE"
+  launch_type     = each.value.launch_type
 
   service_connect_configuration {
     enabled   = each.value.enabled
-    namespace = aws_service_discovery_http_namespace.strata_ecs_namespace.arn
+    namespace = aws_service_discovery_http_namespace.strata_ecs_namespace[each.value.namespace_key].arn
 
     log_configuration {
       log_driver = "awslogs"
@@ -70,11 +100,6 @@ resource "aws_ecs_service" "mongo" {
         "awslogs-region"        = data.aws_region.current.region
         "awslogs-stream-prefix" = "service-connect"
       }
-    }
-
-    access_log_configuration {
-      format                   = each.value.log_format
-      include_query_parameters = each.value.log_include_query_parameters
     }
 
     service {
@@ -88,8 +113,14 @@ resource "aws_ecs_service" "mongo" {
     }
   }
 
+  network_configuration {
+    subnets          = []
+    security_groups  = []
+    assign_public_ip = false
+  }
+
   load_balancer {
-    target_group_arn = aws_lb_target_group.strata.arn
+    target_group_arn = aws_lb_target_group.strata_ecs.arn
     container_name   = each.value.lb_container_name
     container_port   = each.value.container_port
   }

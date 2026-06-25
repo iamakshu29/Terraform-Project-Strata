@@ -275,7 +275,19 @@ variable "metrics" {
   type = map(any)
 }
 
-variable "ecs" {
+variable "efs" {
+
+}
+
+variable "ecs_cluster" {
+  
+}
+
+variable "service_discovery" {
+  type = map(any)
+}
+
+variable "ecs_service" {
   type = map(any)
 }
 

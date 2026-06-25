@@ -10,9 +10,19 @@ resource "aws_lb" "strata" {
   tags = local.tags
 }
 
-resource "aws_lb_target_group" "strata" {
+resource "aws_lb_target_group" "strata_instnace" {
   name     = "strata-lb-tg"
   port     = 80
   protocol = "HTTP"
+  target_type = "instance"
+  vpc_id   = aws_vpc.strata.id
+}
+
+# need to change these
+resource "aws_lb_target_group" "strata_ecs" {
+  name     = "strata-lb-tg"
+  port     = 80
+  protocol = "HTTP"
+  target_type = "ip"
   vpc_id   = aws_vpc.strata.id
 }

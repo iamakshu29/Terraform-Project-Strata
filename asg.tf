@@ -66,5 +66,5 @@ resource "aws_autoscaling_group" "strata" {
 
 resource "aws_autoscaling_attachment" "strata" {
   autoscaling_group_name = aws_autoscaling_group.strata.id
-  lb_target_group_arn    = aws_lb_target_group.strata.arn
+  lb_target_group_arn    = aws_lb_target_group.strata_instance.arn
 }

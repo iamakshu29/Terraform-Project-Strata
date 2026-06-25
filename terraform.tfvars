@@ -506,7 +506,7 @@ metrics = {
     stat        = "Average"
     # for percentage --extended-statistics p99 p95 p50.
     unit            = "Count"
-    dimension_key   = LoadBalancer
+    dimension_key   = "LoadBalancer"
     dimension_value = "app/web"
   }
   metric_2 = {
@@ -515,7 +515,7 @@ metrics = {
     period          = 120
     stat            = "Sum"
     unit            = "Count"
-    dimension_key   = LoadBalancer
+    dimension_key   = "LoadBalancer"
     dimension_value = "app/web"
   }
   metric_3 = {
@@ -524,7 +524,7 @@ metrics = {
     period          = 120
     stat            = "Sum"
     unit            = "Count"
-    dimension_key   = LoadBalancer
+    dimension_key   = "LoadBalancer"
     dimension_value = "app/web"
   }
   metric_4 = {
@@ -533,54 +533,94 @@ metrics = {
     period          = 120
     stat            = "Average"
     unit            = "Count"
-    dimension_key   = LoadBalancer
+    dimension_key   = "LoadBalancer"
     dimension_value = "app/web"
   }
 }
 
-cloudtrail = {
+# cloudtrail = {
 
+# }
+
+efs = {
+  strata_efs = {
+    creation_token   = "strata-efs"
+    encrypted        = true
+    transition_to_ia = "AFTER_30_DAYS"
+  }
 }
 
-ecs = {
-  name = "mongodb"
-  desired_count = 3
-  enabled = true
-  logdriver = "awslogs"
-  log_format = "TEXT"
-  log_include_query_parameters = "ENABLED"
-  service_port_name = "http"
-  service_discovery_name = "example"
-  dns_name = "example"
-  port = 8080
-  placement_strategy_type = "binpack"
-  placement_strategy_field = "cpu"
-  lb_container_name = "eaxmple-container"
-  container_port = 8080
-  alarms_enabled = true
-  rollback = true
+ecs_cluster = {
+  strata_cluster = {
+    name = "strata-app-cluster"
+  }
+}
+
+ecs_service = {
+  strata_service = {
+    task_key      = "strata_task"              # must match task_definitions key
+    cluster_key   = "strata_cluster"           # must match ecs_cluster key
+    namespace_key = "strata_service_discovery" # must match service_discovery key
+    name                         = "mongodb"
+    desired_count                = 3
+    launch_type                  = "FARGATE"
+    enabled                      = true
+    logdriver                    = "awslogs"
+    log_format                   = "TEXT"
+    log_include_query_parameters = "ENABLED"
+    service_port_name            = "http"
+    service_discovery_name       = "example"
+    dns_name                     = "example"
+    port                         = 8080
+    placement_strategy_type      = "binpack"
+    placement_strategy_field     = "cpu"
+    lb_container_name            = "eaxmple-container"
+    container_port               = 8080
+    alarms_enabled               = true
+    rollback                     = true
+  }
+}
+
+service_discovery = {
+  strata_service_discovery = {
+    name = "development"
+    description = "Strata Description of my app"
+  }
 }
 
 task_definitions = {
-  image_1 = {
-    name          = "strata-app-1"
-    image         = "strata-image-1"
-    cpu           = 10
-    memory        = 512
-    essential     = true
-    containerPort = 80
-    hostPort      = 80
+  strata_task = {
+    family = "service"
+    requires_compatibilities = ["FARGATE"]
     network_mode = "awsvpc"
+    cpu    = 256
+    memory = 512
+  tasks = {
+    image_1 = {
+      name          = "strata-app-1"
+      image         = "strata-image-1"
+      cpu           = 10
+      memory        = 512
+      essential     = true
+      containerPort = 80
+      hostPort      = 80
+      network_mode  = "awsvpc"
+    }
+    image_2 = {
+      name          = "strata-app-2"
+      image         = "strata-image-2"
+      cpu           = 10
+      memory        = 256
+      essential     = true
+      containerPort = 443
+      hostPort      = 443
+      network_mode  = "awsvpc"
+    }
   }
-  image_2 = {
-    name          = "strata-app-2"
-    image         = "strata-image-2"
-    cpu           = 10
-    memory        = 256
-    essential     = true
-    containerPort = 443
-    hostPort      = 443
-    network_mode = "awsvpc"
+  volumes = {
+    strata_efs = {
+        name = "strata-efs"
+      }
+    }
   }
-
 }

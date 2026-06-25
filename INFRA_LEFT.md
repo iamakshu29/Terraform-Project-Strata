@@ -64,8 +64,10 @@
   - ✅ Public subnets across 3 AZs
   - ✅ Deletion protection enabled
   - ⚠️ **Missing:** HTTPS listener (port 443), HTTP→HTTPS redirect, ACM certificate, WAF v2 attachment, access logs to S3
-- ✅ ALB Target Group (port 80 HTTP)
-  - ⚠️ **Missing:** Health check config, stickiness settings
+- ✅ ALB Target Group — now **2 separate target groups**:
+  - ✅ `strata_instance` (`target_type = "instance"`) — for ASG/EC2
+  - ✅ `strata_ecs` (`target_type = "ip"`) — for ECS Fargate (awsvpc requires ip)
+  - ⚠️ **Missing:** Health check config, stickiness settings on both
 
 - ✅ ASG + Launch Template
   - ✅ Latest Ubuntu 22.04 AMI (via data source, no hardcoded ID)
@@ -88,6 +90,24 @@
 - ⚠️ **App Server (EC2 in private subnet)**
   - ⚠️ **Missing:** Not yet deployed separately; ASG handles this role
   - ⚠️ **Would need:** Restrict SSH to Bastion SG only (not directly from internet)
+
+- ⚠️ **ECS Fargate (In Progress)**
+* KEEP a FLOW Diagram for it ALSO
+  - ✅ ECS Cluster (`aws_ecs_cluster`, Container Insights enabled, `for_each` over `var.ecs_cluster`)
+  - ✅ ECS Task Definition (`aws_ecs_task_definition`, FARGATE, `awsvpc`, dynamic containers via `for` expression, dynamic volumes via `dynamic "volume"`)
+  - ✅ ECS Service (`aws_ecs_service` with service connect, load balancer block, alarms block, network_configuration)
+  - ✅ EFS (`aws_efs_file_system`, encrypted with KMS, lifecycle policy)
+  - ✅ Service Discovery HTTP Namespace (`aws_service_discovery_http_namespace` for internal service-to-service DNS)
+  - ✅ `service_to_task` / `service_to_cluster` / `service_to_namespace` locals for cross-resource wiring
+  - ⚠️ **Still to fix:**
+    - `depends_on` references wrong resource (`aws_iam_role_policy.foo` doesn't exist)
+    - `aws_cloudwatch_log_group.example` → should be `strata_log_group`
+    - `data.aws_region.current.name` — data source not declared in `data.tf`
+    - `execution_role_arn` and `task_role_arn` — empty strings, need real IAM role ARNs
+    - `network_configuration` subnets and security_groups — still empty `[]`
+    - `locals.` typo → `local.` (2 places in service resource)
+  - ❌ ECR Repository (image scanning + lifecycle policy)
+  - ❌ `role_ecs_task_execution` missing from `assume_role_policy` in tfvars
 
 ### Storage Layer
 - ✅ Main S3 bucket
@@ -128,18 +148,6 @@
 ---
 
 ## ❌ NOT STARTED (Critical Gaps)
-
-### ECS Fargate — COMPLETELY MISSING
-# Add flow diagram and just need to define how to create ECS cluster with EC2 (cust. managed)and with Fargate
-**Spec requirement:** ECS cluster with Fargate tasks, running alongside ASG/EC2
-
-- ❌ ECS Cluster resource
-- ❌ ECS Task Definition (with container JSON template)
-- ❌ ECS Service (with 100/200 deployment healthy/max percent)
-- ❌ ECS Service Discovery (AWS Cloud Map for internal DNS)
-- ❌ ECR Repository (with image scanning + lifecycle policy)
-- ❌ IAM role for ECS task execution (ecsTaskExecutionRole)
-- ❌ Logs sent to CloudWatch
 
 ### ElastiCache Redis — COMPLETELY MISSING
 **Spec requirement:** Redis cluster (multi-AZ, no cluster mode for now)
@@ -291,11 +299,13 @@
 18. **Setup RDS password rotation** — Secrets Manager lambda
 
 ### Phase 2B (application compute)
-19. **Deploy ECS Cluster** — with Container Insights enabled
-20. **Deploy ECS Task Definition** — template container JSON, CloudWatch logs
-21. **Deploy ECS Service** — with ALB target group registration, 100/200 deployment strategy
-22. **Deploy ECR Repository** — image scanning, lifecycle policy (keep last 10)
-23. **Deploy ECS Service Discovery** — AWS Cloud Map internal DNS
+19. ✅ **ECS Cluster** — done (`for_each`, Container Insights enabled)
+20. ✅ **ECS Task Definition** — done (FARGATE, awsvpc, dynamic containers + volumes)
+21. ✅ **ECS Service** — done (service connect, ALB, alarms, network_configuration skeleton)
+22. ✅ **ECS Service Discovery** — done (`aws_service_discovery_http_namespace`)
+23. **Fix ECS wiring** — IAM role ARNs, CloudWatch log group ref, data source, subnets/SGs
+24. **Deploy ECR Repository** — image scanning, lifecycle policy (keep last 10)
+25. **Add `role_ecs_task_execution`** to `assume_role_policy` in tfvars
 
 ### Phase 3 (multi-environment & modularization)
 24. **Refactor to multi-env structure** — `dev/`, `staging/`, `prod/` with separate `.tfvars` and state
@@ -314,9 +324,9 @@
 | **Secrets Manager** | ✅ Complete | DB credentials stored; needs policy cleanup |
 | **IAM** | ⚠️ 60% | Roles declared, complex policy structure, needs verification |
 | **RDS** | ✅ 80% | Single instance (not cluster); encrypted; multi-AZ; needs Aurora migration |
-| **ALB** | ⚠️ 40% | Basic ALB + target group; missing HTTPS, WAF, access logs |
+| **ALB** | ⚠️ 50% | ALB + 2 target groups (instance + ip); missing HTTPS listener, WAF, access logs |
 | **ASG + EC2** | ⚠️ 70% | Launch template, ASG deployed; missing scaling policy, lifecycle hook |
-| **ECS Fargate** | ❌ 0% | Not started |
+| **ECS Fargate** | ⚠️ 60% | Cluster, task def, service, EFS, service discovery done; wiring fixes + ECR remaining |
 | **ElastiCache** | ❌ 0% | Not started |
 | **ACM** | ❌ 0% | Not started |
 | **WAF v2** | ❌ 0% | Not started |
@@ -326,7 +336,7 @@
 | **Multi-env structure** | ❌ 0% | Still flat; Phase 2 work |
 | **Modules** | ❌ 0% | Not yet extracted; Phase 3 work |
 
-**Overall: ~50% complete** — Core networking & database done; compute & observability need significant work; ECS & monitoring are critical gaps.
+**Overall: ~55% complete** — Core networking & database done; ECS skeleton in progress; compute & observability need significant work; monitoring is a critical gap.
 
 ---
 
