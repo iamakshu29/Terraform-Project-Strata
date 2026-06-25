@@ -345,7 +345,7 @@ asg = {
 
 # What can the role do
 iam_policy = {
-  "role_ecs_task" = {
+  "role_ecs_task_execution" = {
     "s3_read_write" = {
       sid    = "S3ReadWrite"
       effect = "Allow"
@@ -378,6 +378,12 @@ iam_policy = {
       effect    = "Allow"
       actions   = ["rds-db:connect"]
       resources = ["arn:aws:rds-db:ap-south-1:123456789012:dbuser:db-ABC123XYZ789/app_user"]
+    }
+    "ecr-access-rw" = {
+      sid       = "ECRReadWrite"
+      effect    = "Allow"
+      actions   = ["ecr:*"]
+      resources = ["arn:aws:ecr:ap-south-1:123456789012:ecr:ecr-ABC123XYZ789/app_user"]
     }
   }
   role_ec2_instance = {
@@ -499,35 +505,82 @@ metrics = {
     period      = 120
     stat        = "Average"
     # for percentage --extended-statistics p99 p95 p50.
-    unit = "Count"
-    dimension_key = LoadBalancer
+    unit            = "Count"
+    dimension_key   = LoadBalancer
     dimension_value = "app/web"
   }
   metric_2 = {
-    metric_name = "RDS_Connections_Count"
-    namespace   = "AWS/RDS"
-    period      = 120
-    stat        = "Sum"
-    unit        = "Count"
-    dimension_key = LoadBalancer
+    metric_name     = "RDS_Connections_Count"
+    namespace       = "AWS/RDS"
+    period          = 120
+    stat            = "Sum"
+    unit            = "Count"
+    dimension_key   = LoadBalancer
     dimension_value = "app/web"
   }
   metric_3 = {
-    metric_name = "ECS_CPU_Utilization"
-    namespace   = "AWS/ECS"
-    period      = 120
-    stat        = "Sum"
-    unit        = "Count"
-    dimension_key = LoadBalancer
+    metric_name     = "ECS_CPU_Utilization"
+    namespace       = "AWS/ECS"
+    period          = 120
+    stat            = "Sum"
+    unit            = "Count"
+    dimension_key   = LoadBalancer
     dimension_value = "app/web"
   }
   metric_4 = {
-    metric_name = "ElastiCache_Redis_Memory_Utilization"
-    namespace   = "AWS/RedisCache"
-    period      = 120
-    stat        = "Average"
-    unit        = "Count"
-    dimension_key = LoadBalancer
+    metric_name     = "ElastiCache_Redis_Memory_Utilization"
+    namespace       = "AWS/RedisCache"
+    period          = 120
+    stat            = "Average"
+    unit            = "Count"
+    dimension_key   = LoadBalancer
     dimension_value = "app/web"
   }
+}
+
+cloudtrail = {
+
+}
+
+ecs = {
+  name = "mongodb"
+  desired_count = 3
+  enabled = true
+  logdriver = "awslogs"
+  log_format = "TEXT"
+  log_include_query_parameters = "ENABLED"
+  service_port_name = "http"
+  service_discovery_name = "example"
+  dns_name = "example"
+  port = 8080
+  placement_strategy_type = "binpack"
+  placement_strategy_field = "cpu"
+  lb_container_name = "eaxmple-container"
+  container_port = 8080
+  alarms_enabled = true
+  rollback = true
+}
+
+task_definitions = {
+  image_1 = {
+    name          = "strata-app-1"
+    image         = "strata-image-1"
+    cpu           = 10
+    memory        = 512
+    essential     = true
+    containerPort = 80
+    hostPort      = 80
+    network_mode = "awsvpc"
+  }
+  image_2 = {
+    name          = "strata-app-2"
+    image         = "strata-image-2"
+    cpu           = 10
+    memory        = 256
+    essential     = true
+    containerPort = 443
+    hostPort      = 443
+    network_mode = "awsvpc"
+  }
+
 }

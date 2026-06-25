@@ -274,3 +274,11 @@ variable "s3_logging" {
 variable "metrics" {
   type = map(any)
 }
+
+variable "ecs" {
+  type = map(any)
+}
+
+variable "task_definitions" {
+  type = map(any)
+}

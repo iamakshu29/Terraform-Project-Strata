@@ -130,6 +130,7 @@
 ## ❌ NOT STARTED (Critical Gaps)
 
 ### ECS Fargate — COMPLETELY MISSING
+# Add flow diagram and just need to define how to create ECS cluster with EC2 (cust. managed)and with Fargate
 **Spec requirement:** ECS cluster with Fargate tasks, running alongside ASG/EC2
 
 - ❌ ECS Cluster resource
