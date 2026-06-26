@@ -3,50 +3,18 @@
 ## Phase 1 — Flat Working Code
 
 ### Networking
-- [x] VPC
-- [x] Internet Gateway
-- [x] Public Subnets (3 AZs, AZ as key)
-- [x] Private Subnets (3 AZs, AZ as key)
-- [x] Data Subnets (2 AZs, AZ as key)
-- [x] NAT Gateways (2, in ap-south-1a and ap-south-1b)
-- [x] Elastic IPs for NAT Gateways
-- [x] Public Route Table + Routes (IGW)
-- [x] Private Route Tables + Routes (NAT, per AZ with az_to_nat local map)
-- [x] Data Route Tables + Routes
-- [x] Route Table Associations (public, private, data)
-- [x] NACLs (public, private, data) with dynamic ingress/egress blocks
 
 ### Security
-- [x] Security Group — App Server
-- [x] Security Group — Database
-- [ ] Security Group rules — verify least privilege, no 0.0.0.0/0 on internal SGs
-- [ ] Bastion Security Group — port 22 from your IP only
 
 ### KMS
-- [x] KMS Key (for RDS encryption)
 
 ### Secrets Manager
-- [x] aws_secretsmanager_secret
-- [x] aws_secretsmanager_secret_version (username + password)
-- [ ] Remove aws_secretsmanager_secret_policy if same-account access only
 
 ### IAM
-- [x] IAM Policy — read_secrets_policy (GetSecretValue)
-- [ ] IAM Role — strata_app (trust policy for EC2)
-- [ ] IAM Role Policy Attachment — attach read_secrets_policy to strata_app role
-- [ ] IAM Instance Profile — wrap role for EC2 use
 
 ### Database
-- [x] DB Subnet Group
-- [x] RDS PostgreSQL Instance (db.t3.medium, Multi-AZ)
-- [ ] Verify username/password pulled from Secrets Manager, not variables
-- [ ] Verify skip_final_snapshot = false for prod
 
 ### Compute
-- [ ] Bastion Host — EC2 in public subnet, port 22 from your IP only
-- [ ] App Server — EC2 in private subnet, port 22 from bastion SG only
-- [ ] Attach IAM Instance Profile to App Server
-- [ ] Fetch latest Amazon Linux 2023 AMI via data source (no hardcoded AMI ID)
 
 ### Backend + State
 - [ ] S3 bucket for remote state
@@ -69,12 +37,6 @@
 
 ## Phase 3 — Modularize
 
-- [ ] Extract VPC + Networking into a module
-- [ ] Extract Compute (Bastion + App Server) into a module
-- [ ] Extract RDS + Secrets into a module
-- [ ] Extract IAM into a module
-- [ ] Root module calls all child modules
-- [ ] Verify all environments still deploy cleanly after modularization
 
 ---
 

@@ -2,7 +2,7 @@ resource "aws_ecr_repository" "strata_ecr" {
   name                 = "strata-repo"
   image_tag_mutability = "IMMUTABLE_WITH_EXCLUSION"
   encryption_configuration {
-    encryption_type = KMS
+    encryption_type = "KMS"
     kms_key         = aws_kms_key.strata.arn
   }
 

@@ -1,6 +1,4 @@
-# depends_on = [aws_iam_role_policy.foo] — wrong reference, doesn't exist
-# aws_cloudwatch_log_group.example.name — should be strata_log_group
-# data.aws_region.current.region — attribute should be .name, and data "aws_region" "current" not declared in data.tf
+
 # execution_role_arn = "" and task_role_arn = "" — empty strings, need actual IAM role references
 # network_configuration subnets and security_groups are empty []
 
@@ -43,8 +41,8 @@ resource "aws_ecs_task_definition" "service" {
   family                   = each.value.family
   requires_compatibilities = each.value.requires_compatibilities
   network_mode             = each.value.network_mode
-  execution_role_arn       = ""
-  task_role_arn            = ""
+  execution_role_arn       = aws_iam_role.strata[var.role_names.ecs_role_key].arn
+  task_role_arn            = aws_iam_role.strata[var.role_names.ecs_task_role_key].arn
   cpu                      = each.value.cpu
   memory                   = each.value.memory
 
@@ -72,7 +70,7 @@ resource "aws_ecs_task_definition" "service" {
       name = volume.value.name
 
       efs_volume_configuration {
-        file_system_id = aws_efs_file_system.strata_efs[volume.value.name].id
+        file_system_id = aws_efs_file_system.strata_efs[volume.key].id
       }
     }
   }
@@ -80,13 +78,13 @@ resource "aws_ecs_task_definition" "service" {
 
 # References the cluster and task definition.
 resource "aws_ecs_service" "strata_service" {
-  for_each        = var.ecs_service
+  for_each = var.ecs_service
 
   name            = each.value.name
   cluster         = aws_ecs_cluster.strata_cluster[each.value.cluster_key].id
   task_definition = aws_ecs_task_definition.service[each.value.task_key].arn
   desired_count   = each.value.desired_count
-  depends_on      = [aws_iam_role_policy.foo]
+  depends_on      = [aws_iam_role_policy_attachment.strata_attach_policy]
   launch_type     = each.value.launch_type
 
   service_connect_configuration {
@@ -96,8 +94,7 @@ resource "aws_ecs_service" "strata_service" {
     log_configuration {
       log_driver = "awslogs"
       options = {
-        "awslogs-group"         = aws_cloudwatch_log_group.example.name
-        "awslogs-region"        = data.aws_region.current.region
+        "awslogs-group"         = aws_cloudwatch_log_group.strata_log_group.name
         "awslogs-stream-prefix" = "service-connect"
       }
     }
@@ -114,13 +111,13 @@ resource "aws_ecs_service" "strata_service" {
   }
 
   network_configuration {
-    subnets          = []
-    security_groups  = []
+    subnets          = [for k in each.value.subnet_keys : aws_subnet.strata_private_subnet[k].id]
+    security_groups  = [for k in each.value.sg_keys : aws_security_group.strata_sg[k].id]
     assign_public_ip = false
   }
 
   load_balancer {
-    target_group_arn = aws_lb_target_group.strata_ecs.arn
+    target_group_arn = aws_lb_target_group.strata[each.value.ecs_target_group].arn
     container_name   = each.value.lb_container_name
     container_port   = each.value.container_port
   }

@@ -80,7 +80,7 @@ resource "aws_iam_role" "strata" {
 }
 
 # Controls who can access the secret at the secret level
-resource "aws_iam_role_policy_attachment" "strata-attach-policy" {
+resource "aws_iam_role_policy_attachment" "strata_attach_policy" {
   for_each   = local.policies
   role       = aws_iam_role.strata[each.value.role_name].name
   policy_arn = aws_iam_policy.strata_policy[each.key].arn

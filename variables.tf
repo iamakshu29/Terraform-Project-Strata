@@ -173,7 +173,15 @@ variable "security_group" {
 }
 
 # ----------------------------------------------------------------------------
+variable "lb" {
+  type = map(any)
+}
 
+variable "target_group" {
+  type = map(any)
+}
+
+# ----------------------------------------------------------------------------
 variable "rds" {
   type = object({
     allocated_storage          = number
@@ -248,6 +256,7 @@ variable "role_names" {
   type = object({
     ec2_role_key          = string
     ecs_role_key          = string
+    ecs_task_role_key     = string
     vpc_flow_log_role_key = string
   })
 }
@@ -256,19 +265,20 @@ variable "role_names" {
 
 variable "s3" {
   type = map(object({
-    block_public_acls       = bool
-    block_public_policy     = bool
-    ignore_public_acls      = bool
-    restrict_public_buckets = bool
-    versioning_status       = string
-    IA_transition_days      = number
-    glacier_transiton_days  = number
-    delete_data_after       = number
+    block_public_acls              = bool
+    block_public_policy            = bool
+    ignore_public_acls             = bool
+    restrict_public_buckets        = bool
+    rule_id                        = string
+    versioning_status              = string
+    status                         = string
+    first_transition_storage_type  = string
+    first_transition_storage_days  = number
+    second_transition_storage_type = string
+    second_transiton_storage_days  = number
+    delete_data_after              = number
+    logging = bool
   }))
-}
-
-variable "s3_logging" {
-
 }
 
 variable "metrics" {
@@ -280,7 +290,7 @@ variable "efs" {
 }
 
 variable "ecs_cluster" {
-  
+
 }
 
 variable "service_discovery" {
@@ -293,4 +303,12 @@ variable "ecs_service" {
 
 variable "task_definitions" {
   type = map(any)
+}
+
+variable "cloudtrail" {
+  type = object({
+    name                          = string
+    s3_key_prefix                 = string
+    include_global_service_events = bool
+  })
 }

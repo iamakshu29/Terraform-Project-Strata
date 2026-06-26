@@ -39,6 +39,7 @@ resource "aws_autoscaling_group" "strata" {
   health_check_grace_period = var.asg.health_check_grace_period
   health_check_type         = var.asg.health_check_type
   desired_capacity          = var.asg.desired_capacity
+  target_group_arns = [aws_lb_target_group.strata["strataInstance"].arn]
   launch_template {
     id      = aws_launch_template.strata.id
     version = "$Latest"
@@ -62,9 +63,4 @@ resource "aws_autoscaling_group" "strata" {
   #       value               = tag.value.value
   #     }
   #   }
-}
-
-resource "aws_autoscaling_attachment" "strata" {
-  autoscaling_group_name = aws_autoscaling_group.strata.id
-  lb_target_group_arn    = aws_lb_target_group.strata_instance.arn
 }

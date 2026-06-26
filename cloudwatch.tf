@@ -37,7 +37,7 @@ resource "aws_cloudwatch_metric_alarm" "strata_metric_alarm_cw" {
         unit        = metric_query.value.unit
 
         dimensions = {
-          metric_query.value.dimesion_key = metric_query.value.dimesion_value
+          (metric_query.value.dimension_key) = metric_query.value.dimension_value
         }
       }
     }

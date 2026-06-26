@@ -198,7 +198,7 @@ route = {
 
 # ---------------------------------------------------
 security_group = {
-  alb = {
+  strataLB = {
     ingress = {
       https = {
         cidr_ipv4   = "0.0.0.0/0"
@@ -281,6 +281,34 @@ security_group = {
 }
 
 # ---------------------------------------------------------
+lb = {
+  strataLB = {
+    internal           = true
+    load_balancer_type = "application"
+    enable_deletion_protection = true
+    port = "443"
+    protocol = "HTTPS"
+  }
+}
+
+target_group = {
+  strataInstance = {
+    port        = 8443
+    protocol    = "HTTPS"
+    target_type = "instance"
+    type        = "forward"
+    lb_key      = "strataLB" # Matches the key in var.lb
+  }
+  strataECS = {
+    port        = 8442
+    protocol    = "HTTPS"
+    target_type = "ip"
+    type        = "forward"
+    lb_key      = "strataLB" # Matches the key in var.lb
+  }
+}
+
+# ---------------------------------------------------------
 
 rds = {
   allocated_storage          = 50
@@ -353,13 +381,13 @@ iam_policy = {
         "s3:GetObject",
         "s3:WriteObject"
       ]
-      resources = ["arn:aws:s3:::my-bucket/*"]
+      resources = ["*"]
     }
     "read_secrets" = {
       sid       = "ReadSecrets"
       effect    = "Allow"
       actions   = ["secretsmanager:GetSecretValue"]
-      resources = ["arn:aws:secretsmanager:ap-south-1:123456789012:secret:*"]
+      resources = ["*"]
     }
     "read_cloudwatch_logs" = {
       sid       = "ReadLog"
@@ -377,13 +405,13 @@ iam_policy = {
       sid       = "RDSReadWrite"
       effect    = "Allow"
       actions   = ["rds-db:connect"]
-      resources = ["arn:aws:rds-db:ap-south-1:123456789012:dbuser:db-ABC123XYZ789/app_user"]
+      resources = ["*"]
     }
     "ecr-access-rw" = {
       sid       = "ECRReadWrite"
       effect    = "Allow"
       actions   = ["ecr:*"]
-      resources = ["arn:aws:ecr:ap-south-1:123456789012:ecr:ecr-ABC123XYZ789/app_user"]
+      resources = ["*"]
     }
   }
   role_ec2_instance = {
@@ -398,11 +426,6 @@ iam_policy = {
       effect    = "Allow"
       actions   = ["ssm:*"]
       resources = ["*"]
-      # All CloudWatch log groups/streams in a specific region & account
-      # resources = ["arn:aws:logs:ap-south-1:123456789012:log-group:*"]
-
-      # Or all CloudWatch logs across all regions/accounts (still scoped to logs service)
-      # resources = ["arn:aws:logs:*:*:*"]
     }
     "s3_read_write" = {
       sid    = "S3ReadWrite"
@@ -411,19 +434,60 @@ iam_policy = {
         "s3:GetObject",
         "s3:PutObject"
       ]
-      resources = ["arn:aws:s3:::my-bucket/*"]
+      resources = ["*"]
     }
     "read_secrets" = {
       sid       = "ReadSecrets"
       effect    = "Allow"
       actions   = ["secretsmanager:GetSecretValue"]
-      resources = ["arn:aws:secretsmanager:ap-south-1:123456789012:secret:*"]
+      resources = ["*"]
     }
     "rds_access-rw" = {
       sid       = "RDSReadWrite"
       effect    = "Allow"
       actions   = ["rds-db:connect"]
-      resources = ["arn:aws:rds-db:ap-south-1:123456789012:dbuser:db-ABC123XYZ789/app_user"]
+      resources = ["*"]
+    }
+  }
+  role_ecs_task = {
+    "s3_read_write" = {
+      sid    = "S3ReadWrite"
+      effect = "Allow"
+      actions = [
+        "s3:GetObject",
+        "s3:PutObject"
+      ]
+      resources = ["*"]
+    }
+    "read_secrets" = {
+      sid       = "ReadSecrets"
+      effect    = "Allow"
+      actions   = ["secretsmanager:GetSecretValue"]
+      resources = ["*"]
+    }
+    "rds_access_rw" = {
+      sid       = "RDSReadWrite"
+      effect    = "Allow"
+      actions   = ["rds-db:connect"]
+      resources = ["*"]
+    }
+    "write_cloudwatch_logs" = {
+      sid    = "WriteLogs"
+      effect = "Allow"
+      actions = [
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ]
+      resources = ["*"]
+    }
+    "xray_write" = {
+      sid    = "WriteXRay"
+      effect = "Allow"
+      actions = [
+        "xray:PutTraceSegments",
+        "xray:PutTelemetryRecords"
+      ]
+      resources = ["*"]
     }
   }
   role_vpc_flow_log = {
@@ -440,6 +504,7 @@ iam_policy = {
       resources = ["*"]
     }
   }
+
 }
 
 # who can use the role 
@@ -450,6 +515,13 @@ assume_role_policy = {
     Effect            = "Allow"
     Sid               = ""
     Principal_Service = "ec2.amazonaws.com"
+  }
+  role_ecs_task_execution = {
+    Version           = "2012-10-17"
+    Action            = "sts:AssumeRole"
+    Effect            = "Allow"
+    Sid               = ""
+    Principal_Service = "ecs-tasks.amazonaws.com"
   }
   role_ecs_task = {
     Version           = "2012-10-17"
@@ -469,7 +541,8 @@ assume_role_policy = {
 
 role_names = {
   ec2_role_key          = "role_ec2_instance"
-  ecs_role_key          = "role_ecs_task"
+  ecs_role_key          = "role_ecs_task_execution"
+  ecs_task_role_key     = "role_ecs_task"
   vpc_flow_log_role_key = "role_vpc_flow_log"
 }
 
@@ -478,19 +551,38 @@ cloudwatch = {
 }
 
 s3 = {
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
-  versioning_status       = "Enabled"
-  IA_transition_days      = 30
-  glacier_transiton_days  = 90
-  delete_data_after       = 365
+  strata_bucket = {
+    block_public_acls              = true
+    block_public_policy            = true
+    ignore_public_acls             = true
+    restrict_public_buckets        = true
+    rule_id                        = "strata-s3-rule"
+    versioning_status              = "Enabled"
+    status                         = "Enabled"
+    first_transition_storage_type  = "STANDARD_IA"
+    first_transition_storage_days  = 30
+    second_transition_storage_type = "GLACIER"
+    second_transiton_storage_days  = 90
+    delete_data_after              = 365
+    logging = false
+  }
+  strata_logging_bucket = {
+    block_public_acls              = true
+    block_public_policy            = true
+    ignore_public_acls             = true
+    restrict_public_buckets        = true
+    rule_id                        = "strata-s3-logging-rule"
+    status                         = "Enabled"
+    versioning_status              = "Enabled"
+    first_transition_storage_type  = "STANDARD_IA"
+    first_transition_storage_days  = 30
+    second_transition_storage_type = "GLACIER"
+    second_transiton_storage_days  = 90
+    delete_data_after              = 365
+    logging                        = true
+  }
 }
 
-s3_logging = {
-
-}
 
 # ssm_paramter_store = {
 
@@ -538,9 +630,11 @@ metrics = {
   }
 }
 
-# cloudtrail = {
-
-# }
+cloudtrail = {
+  name                          = "strata-trail"
+  s3_key_prefix                 = "cloudtrail"
+  include_global_service_events = true
+}
 
 efs = {
   strata_efs = {
@@ -558,9 +652,9 @@ ecs_cluster = {
 
 ecs_service = {
   strata_service = {
-    task_key      = "strata_task"              # must match task_definitions key
-    cluster_key   = "strata_cluster"           # must match ecs_cluster key
-    namespace_key = "strata_service_discovery" # must match service_discovery key
+    task_key                     = "strata_task"              # must match task_definitions key
+    cluster_key                  = "strata_cluster"           # must match ecs_cluster key
+    namespace_key                = "strata_service_discovery" # must match service_discovery key
     name                         = "mongodb"
     desired_count                = 3
     launch_type                  = "FARGATE"
@@ -574,51 +668,54 @@ ecs_service = {
     port                         = 8080
     placement_strategy_type      = "binpack"
     placement_strategy_field     = "cpu"
+    ecs_target_group             = "strataECS" # same as target_group key for ecs
     lb_container_name            = "eaxmple-container"
     container_port               = 8080
     alarms_enabled               = true
     rollback                     = true
+    subnet_keys                  = ["ap-south-1a", "ap-south-1b", "ap-south-1c"]
+    sg_keys                      = ["ecs"]
   }
 }
 
 service_discovery = {
   strata_service_discovery = {
-    name = "development"
+    name        = "development"
     description = "Strata Description of my app"
   }
 }
 
 task_definitions = {
   strata_task = {
-    family = "service"
+    family                   = "service"
     requires_compatibilities = ["FARGATE"]
-    network_mode = "awsvpc"
-    cpu    = 256
-    memory = 512
-  tasks = {
-    image_1 = {
-      name          = "strata-app-1"
-      image         = "strata-image-1"
-      cpu           = 10
-      memory        = 512
-      essential     = true
-      containerPort = 80
-      hostPort      = 80
-      network_mode  = "awsvpc"
+    network_mode             = "awsvpc"
+    cpu                      = 256
+    memory                   = 512
+    tasks = {
+      image_1 = {
+        name          = "strata-app-1"
+        image         = "strata-image-1"
+        cpu           = 10
+        memory        = 512
+        essential     = true
+        containerPort = 80
+        hostPort      = 80
+        network_mode  = "awsvpc"
+      }
+      image_2 = {
+        name          = "strata-app-2"
+        image         = "strata-image-2"
+        cpu           = 10
+        memory        = 256
+        essential     = true
+        containerPort = 443
+        hostPort      = 443
+        network_mode  = "awsvpc"
+      }
     }
-    image_2 = {
-      name          = "strata-app-2"
-      image         = "strata-image-2"
-      cpu           = 10
-      memory        = 256
-      essential     = true
-      containerPort = 443
-      hostPort      = 443
-      network_mode  = "awsvpc"
-    }
-  }
-  volumes = {
-    strata_efs = {
+    volumes = {
+      strata_efs = {
         name = "strata-efs"
       }
     }
