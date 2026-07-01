@@ -223,3 +223,10 @@ So you must explicitly allow them in the trust policy:
 ### AWS Console hides this split
 Step 1 "Select trusted entity" → sets trust policy | Step 2 "Add permissions" → attaches permission policy.
 Feels like one thing in the console. In Terraform you define both explicitly.
+
+###
+Create and Save the Plan
+>> terraform plan -out=tfplan
+- Apply the saeved plan instead of creating the plan again, might shows drift incase of resource "random_string".
+- As it will created the randomstring again when runnin terraform apply
+>> terraform apply tfplan 
