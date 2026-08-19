@@ -44,5 +44,93 @@ resource "aws_cloudwatch_metric_alarm" "strata_metric_alarm_cw" {
   }
 }
 
+resource "aws_cloudwatch_dashboard" "strata" {
+  dashboard_name = "strata-${var.env_tag}"
 
-
+  dashboard_body = jsonencode({
+    widgets = [
+      {
+        type   = "metric"
+        width  = 12
+        height = 6
+        properties = {
+          title  = "ALB — Request Count & 5XX Errors"
+          period = 300
+          stat   = "Sum"
+          metrics = [
+            ["AWS/ApplicationELB", "RequestCount", "LoadBalancer", aws_lb.strata["strataLB"].arn_suffix],
+            ["AWS/ApplicationELB", "HTTPCode_ELB_5XX_Count", "LoadBalancer", aws_lb.strata["strataLB"].arn_suffix],
+          ]
+        }
+      },
+      {
+        type   = "metric"
+        width  = 12
+        height = 6
+        properties = {
+          title  = "ALB — Target Response Time (p99)"
+          period = 300
+          stat   = "p99"
+          metrics = [
+            ["AWS/ApplicationELB", "TargetResponseTime", "LoadBalancer", aws_lb.strata["strataLB"].arn_suffix],
+          ]
+        }
+      },
+      {
+        type   = "metric"
+        width  = 12
+        height = 6
+        properties = {
+          title  = "RDS — CPU & Connections"
+          period = 300
+          stat   = "Average"
+          metrics = [
+            ["AWS/RDS", "CPUUtilization", "DBInstanceIdentifier", var.rds.identifier],
+            ["AWS/RDS", "DatabaseConnections", "DBInstanceIdentifier", var.rds.identifier],
+          ]
+        }
+      },
+      {
+        type   = "metric"
+        width  = 12
+        height = 6
+        properties = {
+          title  = "ElastiCache Redis — Memory & Connections"
+          period = 300
+          stat   = "Average"
+          metrics = [
+            ["AWS/ElastiCache", "DatabaseMemoryUsagePercentage", "ReplicationGroupId", var.elasticache.replication_group_id],
+            ["AWS/ElastiCache", "CurrConnections", "ReplicationGroupId", var.elasticache.replication_group_id],
+          ]
+        }
+      },
+      {
+        type   = "metric"
+        width  = 12
+        height = 6
+        properties = {
+          title  = "ECS — CPU & Memory Utilization"
+          period = 300
+          stat   = "Average"
+          metrics = [
+            ["AWS/ECS", "CPUUtilization", "ClusterName", "strata-app-cluster"],
+            ["AWS/ECS", "MemoryUtilization", "ClusterName", "strata-app-cluster"],
+          ]
+        }
+      },
+      {
+        type   = "metric"
+        width  = 12
+        height = 6
+        properties = {
+          title  = "ASG — Healthy Host Count"
+          period = 300
+          stat   = "Average"
+          metrics = [
+            ["AWS/ApplicationELB", "HealthyHostCount", "TargetGroup", aws_lb_target_group.strata["strataInstance"].arn_suffix, "LoadBalancer", aws_lb.strata["strataLB"].arn_suffix],
+          ]
+        }
+      },
+    ]
+  })
+}
