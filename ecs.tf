@@ -16,6 +16,15 @@ resource "aws_efs_file_system" "strata_efs" {
   tags = local.tags
 }
 
+# Mount targets — one per private subnet AZ so ECS tasks in every AZ can reach EFS
+resource "aws_efs_mount_target" "strata" {
+  for_each = var.private_subnets
+
+  file_system_id  = aws_efs_file_system.strata_efs["strata_efs"].id
+  subnet_id       = aws_subnet.strata_private_subnet[each.key].id
+  security_groups = [aws_security_group.strata_sg["efs"].id]
+}
+
 # Logical cluster where the service runs.
 resource "aws_ecs_cluster" "strata_cluster" {
   for_each = var.ecs_cluster
