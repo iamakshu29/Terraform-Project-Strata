@@ -1,5 +1,7 @@
 aws_region = "ap-south-1"
 
+domain_name = "strata.example.com"
+
 env_tag = "dev"
 
 vpc = {
@@ -161,38 +163,7 @@ data_nacl_rules = {
 
 route = {
   public_routes = {
-    ap-south-1a = {
-      destination_cidr = "10.0.1.0/24"
-    }
-    ap-south-1b = {
-      destination_cidr = "10.0.2.0/24"
-
-    }
-    ap-south-1c = {
-      destination_cidr = "10.0.3.0/24"
-    }
-  }
-  private_routes = {
-    ap-south-1a = {
-      destination_cidr = "10.0.11.0/24"
-    }
-    ap-south-1b = {
-      destination_cidr = "10.0.15.0/24"
-    }
-    ap-south-1c = {
-      destination_cidr = "10.0.19.0/24"
-    }
-  }
-  data_routes = {
-    ap-south-1a = {
-      destination_cidr = "10.0.101.0/24"
-    }
-    ap-south-1b = {
-      destination_cidr = "10.0.102.0/24"
-    }
-    ap-south-1c = {
-      destination_cidr = "10.0.103.0/24"
-    }
+    internet = { destination_cidr = "0.0.0.0/0" }
   }
 }
 
@@ -206,13 +177,20 @@ security_group = {
         to_port     = 443
         ip_protocol = "tcp"
       }
+      # Port 80 is accepted only to return a 301 redirect to HTTPS
+      http = {
+        cidr_ipv4   = "0.0.0.0/0"
+        from_port   = 80
+        to_port     = 80
+        ip_protocol = "tcp"
+      }
     }
   }
 
   ecs = {
     ingress = {
       alb = {
-        source_security_group = "alb"
+        source_security_group = "strataLB" # must match the ALB SG key
         from_port             = 8080
         to_port               = 8080
         ip_protocol           = "tcp"
@@ -223,7 +201,7 @@ security_group = {
   ec2 = {
     ingress = {
       alb = {
-        source_security_group = "alb"
+        source_security_group = "strataLB" # must match the ALB SG key
         from_port             = 8080
         to_port               = 8080
         ip_protocol           = "tcp"
@@ -232,15 +210,8 @@ security_group = {
   }
 
   bastion = {
-    ingress = {
-      ssh = {
-        # Replace with your office/home IP
-        cidr_ipv4   = "0.0.0.0/0" # Use VPN or home IP instead
-        from_port   = 22
-        to_port     = 22
-        ip_protocol = "tcp"
-      }
-    }
+    # No SSH ingress — access via SSM Session Manager only (no open port needed)
+    ingress = {}
   }
 
   rds = {
@@ -278,16 +249,33 @@ security_group = {
       }
     }
   }
+
+  efs = {
+    ingress = {
+      ecs = {
+        source_security_group = "ecs"
+        from_port             = 2049
+        to_port               = 2049
+        ip_protocol           = "tcp"
+      }
+      ec2 = {
+        source_security_group = "ec2"
+        from_port             = 2049
+        to_port               = 2049
+        ip_protocol           = "tcp"
+      }
+    }
+  }
 }
 
 # ---------------------------------------------------------
 lb = {
   strataLB = {
-    internal           = true
-    load_balancer_type = "application"
+    internal                   = false # public-facing ALB in public subnets
+    load_balancer_type         = "application"
     enable_deletion_protection = true
-    port = "443"
-    protocol = "HTTPS"
+    port                       = "443"
+    protocol                   = "HTTPS"
   }
 }
 
@@ -348,7 +336,7 @@ aws_bastian_instance = {
 }
 
 launch_template = {
-  instance_type               = "t2.xa.large"
+  instance_type               = "t3.large"
   subnet_az                   = "ap-south-1b"
   subnet_type                 = "private"
   associate_public_ip_address = false
@@ -564,7 +552,7 @@ s3 = {
     second_transition_storage_type = "GLACIER"
     second_transiton_storage_days  = 90
     delete_data_after              = 365
-    logging = false
+    logging                        = false
   }
   strata_logging_bucket = {
     block_public_acls              = true
@@ -587,6 +575,19 @@ s3 = {
 # ssm_paramter_store = {
 
 # }
+
+elasticache = {
+  replication_group_id     = "strata-redis"
+  description              = "Strata ElastiCache Redis replication group"
+  node_type                = "cache.t3.micro"
+  num_cache_clusters       = 2
+  port                     = 6379
+  parameter_group_name     = "default.redis7"
+  maintenance_window       = "sun:05:00-sun:06:00"
+  snapshot_retention_limit = 7
+  snapshot_window          = "03:00-04:00"
+  apply_immediately        = false
+}
 
 
 # change dim_key and value

@@ -4,6 +4,11 @@ variable "aws_region" {
   default     = "ap-south-1"
 }
 
+variable "domain_name" {
+  type        = string
+  description = "Public domain name used for the ACM certificate (e.g. strata.example.com)"
+}
+
 variable "env_tag" {
   type        = string
   description = "Environment Value"
@@ -145,17 +150,9 @@ variable "route" {
     public_routes = map(object({
       destination_cidr = string
     }))
-
-    private_routes = map(object({
-      destination_cidr = string
-    }))
-
-    data_routes = map(object({
-      destination_cidr = string
-    }))
   })
 
-  description = "Defining Public, Private and Data Routes"
+  description = "Public route table entries only — private and data routes are derived from subnet maps"
 }
 
 # variable "route_table" {
@@ -277,7 +274,7 @@ variable "s3" {
     second_transition_storage_type = string
     second_transiton_storage_days  = number
     delete_data_after              = number
-    logging = bool
+    logging                        = bool
   }))
 }
 
@@ -287,6 +284,22 @@ variable "metrics" {
 
 variable "efs" {
 
+}
+
+variable "elasticache" {
+  type = object({
+    replication_group_id     = string
+    description              = string
+    node_type                = string
+    num_cache_clusters       = number
+    port                     = number
+    parameter_group_name     = string
+    maintenance_window       = string
+    snapshot_retention_limit = number
+    snapshot_window          = string
+    apply_immediately        = bool
+  })
+  description = "ElastiCache Redis replication group configuration"
 }
 
 variable "ecs_cluster" {
