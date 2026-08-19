@@ -85,3 +85,9 @@ resource "aws_iam_role_policy_attachment" "strata_attach_policy" {
   role       = aws_iam_role.strata[each.value.role_name].name
   policy_arn = aws_iam_policy.strata_policy[each.key].arn
 }
+
+# Grants EC2 instances and ASG nodes the SSM Session Manager permissions
+resource "aws_iam_role_policy_attachment" "strata_ssm_core" {
+  role       = aws_iam_role.strata[var.role_names.ec2_role_key].name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
