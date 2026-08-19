@@ -1,360 +1,93 @@
-# Strata Terraform Infrastructure — Status & What's Left
+# Strata Terraform Infrastructure — Current Status
 
-**Project Goal:** Production-grade multi-tier AWS infrastructure across 3 AZs (ap-south-1) using Terraform.
-
-**Current Spec Target:** Align with the comprehensive AWS spec provided (VPC, ALB+ECS+ASG, RDS Aurora, ElastiCache, observability, IAM, KMS, Secrets Manager).
+**Phase 1 (flat working code) is complete.** All resources are implemented and `terraform validate` passes.
 
 ---
 
-## ✅ COMPLETED (Phase 1 — Networking & Core Infra)
+## ✅ COMPLETE
 
 ### Networking
-- ✅ VPC (`10.0.0.0/16`)
-- ✅ Internet Gateway
-- ✅ Public Subnets (3 AZs: `10.0.1/2/3.0/24`)
-- ✅ Private Subnets (3 AZs: `10.0.11/15/19.0/22`)
-- ✅ Data Subnets (3 AZs, but only 2 currently used for RDS: `10.0.101/102/103.0/24`)
-- ✅ NAT Gateways (2 only, in ap-south-1a and ap-south-1b)
-- ✅ Elastic IPs for NAT GWs
-- ✅ Public Route Tables + IGW routes
-- ✅ Private Route Tables + NAT routes (with `az_to_nat` map handling the 3rd AZ routing through ap-south-1b NAT)
-- ✅ Data Route Tables (no outbound internet route)
-- ✅ Route Table Associations (all 3 tiers)
-- ✅ NACLs (public, private, data) with dynamic ingress/egress blocks
+- VPC `10.0.0.0/16`, IGW, 9 subnets across 3 AZs (public / private / data)
+- NAT Gateways (2) — `ap-south-1a` and `ap-south-1b`; `ap-south-1c` routes through `ap-south-1b` via `az_to_nat` local
+- Per-AZ private route tables (one per AZ, each with its own NAT route)
+- Data subnets isolated — no internet route
+- NACLs (public, private, data) with dynamic ingress/egress blocks
+- VPC Endpoints: S3 Gateway (free) + 8 Interface endpoints (ECR API, ECR DKR, Secrets Manager, SSM, SSM Messages, EC2 Messages, CloudWatch Logs, KMS)
 
-### Security Groups
-- ✅ SG for ALB (port 443 from `0.0.0.0/0`)
-- ✅ SG for EC2 (port 8080 from ALB SG)
-- ✅ SG for RDS (port 5432 from EC2 and ECS SGs)
-- ✅ SG for Bastion (port 22, currently open)
-- ✅ SG for ECS (port 8080 from ALB SG) — *declared but not yet used*
-- ✅ SG for Redis (port 6379 from EC2 and ECS SGs) — *declared but not yet used*
-- ⚠️ **Issue:** Bastion SG allows `0.0.0.0/0:22` — needs to be restricted to your IP
+### Security & Encryption
+- Security Groups: ALB (80+443), EC2, ECS, RDS, Redis, EFS, Bastion (no SSH — SSM only)
+- KMS CMK with rotation — used by RDS, S3, EBS, EFS, ElastiCache, SSM Parameter Store
+- Secrets Manager — RDS credentials (username + password)
+- ACM public certificate with wildcard SAN, DNS-validated automatically via Route 53
+- ALB: HTTPS listeners (8443 instance, 8442 ECS) + HTTP→HTTPS redirect on port 80
+- TLS policy: `ELBSecurityPolicy-TLS13-1-2-2021-06`
+- All S3 buckets: public access blocked, KMS encrypted, versioned
 
-### KMS & Encryption
-- ✅ KMS CMK for general encryption (RDS, S3, EBS)
-- ✅ KMS Alias
+### IAM
+- 4 roles: `role_ec2_instance`, `role_ecs_task_execution`, `role_ecs_task`, `role_vpc_flow_log`
+- Custom inline policies per role (S3, Secrets Manager, SSM, RDS, ECR, CloudWatch, X-Ray)
+- `AmazonSSMManagedInstanceCore` managed policy on EC2 role (enables SSM Session Manager)
+- IAM instance profile attached to both bastion and ASG launch template
 
-### Secrets Manager
-- ✅ Secrets storage (RDS username + password)
-- ✅ Secret version
-- ⚠️ **TODO:** Remove `aws_secretsmanager_secret_policy` if same-account access only
+### Database & Cache
+- RDS PostgreSQL `db.t3.medium` Multi-AZ, KMS encrypted, Secrets Manager credentials, deletion protection on
+- ElastiCache Redis replication group — 2 nodes, KMS at-rest + TLS in-transit, automatic failover, 7-day snapshots
+- Both in isolated data subnets (no internet route)
+- DB subnet group + ElastiCache subnet group across all 3 data subnet AZs
 
-### IAM (Partial)
-- ✅ IAM Policy: `read_secrets_policy` (GetSecretValue on Secrets Manager)
-- ✅ IAM Roles declared:
-  - `role_ec2_instance` — for EC2
-  - `role_ecs_task` — for ECS tasks
-  - `role_vpc_flow_log` — for VPC Flow Logs
-- ✅ IAM Policy Attachments (policies attached to roles)
-- ✅ IAM Instance Profile (for EC2 to assume role)
-- ⚠️ **Issue:** Complex policy structure in `iam_role_and_policy.tf` needs verification; locals map might not work as expected
+### Compute
+- ALB (public, deletion protection, access logs → S3 logging bucket)
+- 2 target groups: `strataInstance` (type=instance, ASG) + `strataECS` (type=ip, Fargate)
+- Health checks on both target groups (`/health`, 200-299)
+- ASG + Launch Template: Ubuntu 22.04 (dynamic AMI), `t3.large`, EBS gp3 KMS encrypted, SSM access
+- ASG target tracking scaling policy on `ALBRequestCountPerTarget` (threshold 1000 req/min)
+- ECS Cluster (Container Insights enabled), Task Definition (FARGATE, awsvpc), Service (service connect, alarms, LB)
+- EFS file system (KMS encrypted, lifecycle to IA after 30 days) + mount targets in all 3 private subnet AZs
+- ECR repository (KMS, IMMUTABLE tags, scan on push, lifecycle: keep last 30, archive after 90 days)
+- Bastion EC2 in public subnet — SSM Session Manager only (no SSH key, no port 22 open)
+- Service Discovery HTTP namespace
 
-### Database Layer
-- ✅ DB Subnet Group (across data subnets)
-- ✅ RDS PostgreSQL (Multi-AZ, `db.t3.medium`)
-  - ✅ Encrypted with KMS CMK
-  - ✅ Credentials from Secrets Manager (not hardcoded)
-  - ✅ 7-day backup retention
-  - ✅ `deletion_protection = true`
-  - ✅ `skip_final_snapshot = false` (will require manual intervention on destroy)
-
-### Compute Layer (Partial)
-- ✅ ALB
-  - ✅ Public subnets across 3 AZs
-  - ✅ Deletion protection enabled
-  - ⚠️ **Missing:** HTTPS listener (port 443), HTTP→HTTPS redirect, ACM certificate, WAF v2 attachment, access logs to S3
-- ✅ ALB Target Group — now **2 separate target groups**:
-  - ✅ `strata_instance` (`target_type = "instance"`) — for ASG/EC2
-  - ✅ `strata_ecs` (`target_type = "ip"`) — for ECS Fargate (awsvpc requires ip)
-  - ⚠️ **Missing:** Health check config, stickiness settings on both
-
-- ✅ ASG + Launch Template
-  - ✅ Latest Ubuntu 22.04 AMI (via data source, no hardcoded ID)
-  - ✅ Across private subnets (3 AZs)
-  - ✅ Mixed instance policy (on-demand + spot capable)
-  - ✅ EBS encryption with KMS
-  - ✅ IAM instance profile attached
-  - ✅ Attached to ALB target group
-  - ⚠️ **Missing:** 
-    - Target tracking scaling policy (should scale on ALBRequestCountPerTarget)
-    - Lifecycle hook for graceful connection draining on termination
-    - SSM agent bootstrap in user data (no SSH keypair should be needed)
-
-- ⚠️ **Bastion Host (EC2 in public subnet)**
-  - ✅ Deployed in public subnet (ap-south-1a)
-  - ✅ Associated public IP
-  - ✅ Attached EBS volume
-  - ⚠️ **Issue:** SSH key pair attached; should either restrict SG to your IP or remove SSH entirely (use SSM)
-
-- ⚠️ **App Server (EC2 in private subnet)**
-  - ⚠️ **Missing:** Not yet deployed separately; ASG handles this role
-  - ⚠️ **Would need:** Restrict SSH to Bastion SG only (not directly from internet)
-
-- ⚠️ **ECS Fargate (In Progress)**
-* KEEP a FLOW Diagram for it ALSO
-  - ✅ ECS Cluster (`aws_ecs_cluster`, Container Insights enabled, `for_each` over `var.ecs_cluster`)
-  - ✅ ECS Task Definition (`aws_ecs_task_definition`, FARGATE, `awsvpc`, dynamic containers via `for` expression, dynamic volumes via `dynamic "volume"`)
-  - ✅ ECS Service (`aws_ecs_service` with service connect, load balancer block, alarms block, network_configuration)
-  - ✅ EFS (`aws_efs_file_system`, encrypted with KMS, lifecycle policy)
-  - ✅ Service Discovery HTTP Namespace (`aws_service_discovery_http_namespace` for internal service-to-service DNS)
-  - ✅ `service_to_task` / `service_to_cluster` / `service_to_namespace` locals for cross-resource wiring
-  - ⚠️ **Still to fix:**
-    - `depends_on` references wrong resource (`aws_iam_role_policy.foo` doesn't exist)
-    - `aws_cloudwatch_log_group.example` → should be `strata_log_group`
-    - `data.aws_region.current.name` — data source not declared in `data.tf`
-    - `execution_role_arn` and `task_role_arn` — empty strings, need real IAM role ARNs
-    - `network_configuration` subnets and security_groups — still empty `[]`
-    - `locals.` typo → `local.` (2 places in service resource)
-  - ❌ ECR Repository (image scanning + lifecycle policy)
-  - ❌ `role_ecs_task_execution` missing from `assume_role_policy` in tfvars
-
-### Storage Layer
-- ✅ Main S3 bucket
-  - ✅ Versioning enabled
-  - ✅ Public access blocked (all 4 settings)
-  - ✅ KMS encryption
-  - ✅ Lifecycle rules (IA after 30 days, Glacier after 90)
-  
-- ✅ Logging S3 bucket (for ALB/CloudTrail logs)
-  - ⚠️ Versioning enabled
-  - ⚠️ Public access blocked
-  - ⚠️ Bucket policy allowing CloudWatch Logs to write
-  - ⚠️ S3 logging configured (destination for access logs)
+### DNS
+- Route 53 public hosted zone for `var.domain_name`
+- ACM DNS validation CNAME records (auto-created by Terraform)
+- ALB alias A record
 
 ### Observability
-- ✅ CloudWatch Log Group (`strata-cloudwatch-log-group`)
-  - ✅ 30-day retention
-  
-- ✅ VPC Flow Logs
-  - ✅ Enabled on VPC
-  - ✅ Published to CloudWatch Logs
-  - ✅ All traffic (`traffic_type = ALL`)
-  
-- ⚠️ **Missing:**
-  - CloudWatch Metric Alarms (ALB 5XX, ECS CPU, RDS connections, Redis memory)
-  - CloudWatch Dashboard (as JSON templatefile)
-  - Container Insights on ECS cluster
-  - X-Ray tracing setup
-  - CloudTrail (account-level API audit)
+- CloudWatch Log Group (`strata-cloudwatch-log-group`, 30-day retention)
+- VPC Flow Logs → CloudWatch (all traffic)
+- CloudWatch Metric Alarm (ALB 5XX, dynamic metric query block)
+- CloudWatch Dashboard (`strata-<env>`) — 6 widgets: ALB requests/errors/latency, RDS CPU/connections, Redis memory/connections, ECS CPU/memory, ASG healthy hosts
+- CloudTrail → S3 logging bucket (with integrity check conditions)
 
-### SSM Parameter Store
-- ✅ Parameters created for:
-  - DB endpoint
-  - S3 bucket name
-  - ALB DNS name
-  - ⚠️ **Missing:** Redis endpoint (commented out)
+### Storage & Audit
+- S3 app bucket (`strata_bucket`) — versioning, lifecycle (IA 30d → Glacier 90d → expire 365d), KMS, bucket policy for ECS+EC2 roles
+- S3 logging bucket — single consolidated bucket policy covering S3 server access logging + CloudTrail + ALB access logs
+- SSM Parameter Store (SecureString/KMS) — DB endpoint, S3 buckets, Redis primary+reader endpoints, ALB DNS
+
+### Remote State
+- S3 state bucket (KMS encrypted, versioned, `prevent_destroy`, account-ID suffixed name)
+- S3 native locking (`use_lockfile = true`) — requires Terraform ≥ 1.10, no DynamoDB needed
 
 ---
 
-## ❌ NOT STARTED (Critical Gaps)
+## ⚠️ MANUAL STEPS BEFORE FIRST APPLY
 
-### ElastiCache Redis — COMPLETELY MISSING
-**Spec requirement:** Redis cluster (multi-AZ, no cluster mode for now)
-
-- ❌ ElastiCache Subnet Group
-- ❌ Redis Cluster
-- ❌ Auth token (stored in Secrets Manager)
-- ❌ KMS encryption at-rest
-- ❌ In-transit encryption
-- ❌ Parameter store endpoint
-
-### ACM Certificate — MISSING
-**Spec requirement:** HTTPS listener on ALB (port 443)
-
-- ❌ ACM Certificate
-- ❌ ALB HTTPS listener (port 443)
-- ❌ ALB HTTP→HTTPS redirect listener (port 80)
-- ❌ ALB access logs to S3
-
-### WAF v2 — MISSING
-**Spec requirement:** Web ACL attached to ALB
-
-- ❌ WAF v2 IP Set (if custom rules needed)
-- ❌ WAF v2 Web ACL
-- ❌ WAF v2 Association to ALB
-
-### CloudTrail — MISSING
-**Spec requirement:** Account-level API audit trail
-
-- ❌ CloudTrail
-- ❌ CloudTrail logging to S3 with integrity validation
-
-### Advanced IAM — PARTIALLY MISSING
-**Spec requirement:** Granular role separation
-
-- ✅ Basic roles created but needs cleanup
-- ❌ Dedicated KMS key admin role (separate from key usage role)
-- ❌ `ecsTaskExecutionRole` for ECS
-- ❌ GitHub Actions OIDC role (for CI/CD)
-- ❌ Secrets Manager rotation lambda role
-- ⚠️ **Issue:** Current IAM policy structure is complex; needs verification that policies are correctly attached
-
-### Advanced RDS — PARTIALLY MISSING
-**Spec requirement:** Aurora PostgreSQL Cluster (not single instance)
-
-- ❌ Convert from `aws_db_instance` to `aws_rds_cluster` + `aws_rds_cluster_instance`
-- ❌ Custom RDS parameter group (with `log_min_duration_statement = 1000` for slow query logging)
-- ❌ RDS automated backups with lifecycle rules
-- ❌ Secrets Manager rotation lambda for RDS password
-
-### Advanced S3 & Data Layer
-- ⚠️ ALB access logs not being written to S3 (ALB listener missing)
-- ❌ S3 access logging on main bucket (currently only has logging bucket for ALB)
-- ❌ S3 replication (if multi-region planned later)
-
-### Observability & Monitoring — CRITICAL GAPS
-- ❌ CloudWatch Metric Alarms:
-  - ALB 5XX error rate > 1%
-  - ECS CPU > 80%
-  - RDS connections > 80% of max
-  - Redis memory > 75%
-- ❌ CloudWatch Dashboard (as `templatefile()` JSON)
-- ❌ Container Insights on ECS cluster
-- ❌ X-Ray tracing (X-Ray daemon sidecar in ECS task)
-- ❌ Custom metrics / application instrumentation setup
-
-### Multi-Environment Structure — MISSING
-**Phase 2 requirement:** Directory layout for dev/staging/prod
-
-- ❌ `dev/`, `staging/`, `prod/` folders with separate `.tfvars` and state
-- ❌ Root module refactoring to support multi-env
-
-### Modularization — MISSING
-**Phase 3 requirement:** Extract into child modules
-
-- ❌ `modules/vpc/`, `modules/compute/`, `modules/data/`, `modules/iam/`, etc.
-- ❌ Root module calling all child modules
-- ❌ Module outputs wired to SSM Parameter Store
+1. **Set `domain_name`** in `terraform.tfvars` to a domain you own (not `strata.example.com`)
+2. **First apply** with local backend to create state bucket + all resources
+3. **After first apply** — copy `route53_name_servers` output to your domain registrar's NS records
+4. **Uncomment the `backend "s3"` block** in `provider.tf`, fill in the state bucket name from the `state_bucket_name` output
+5. **Run `terraform init -migrate-state`** to move local state into S3
 
 ---
 
-## ⚠️ KNOWN ISSUES & GOTCHAS
+## ❌ INTENTIONALLY DEFERRED (future phases)
 
-### 1. **Bastion Host SSH too permissive**
-   - **Current:** `cidr_ipv4 = "0.0.0.0/0"` on port 22
-   - **Should be:** Your IP only, or remove SSH entirely and use SSM Session Manager
-   - **File:** `security_group.tf`, variable `security_group.bastion.ingress.ssh`
-
-### 2. **IAM Policy Structure Complexity**
-   - **Current:** `iam_role_and_policy.tf` uses complex `locals` maps and dynamic policy generation
-   - **Risk:** Policies may not attach correctly; verify with `terraform plan`
-   - **Fix:** Simplify or test thoroughly before applying
-
-### 3. **RDS `skip_final_snapshot` enforcement**
-   - **Current:** `skip_final_snapshot = false` and `deletion_protection = true`
-   - **Impact:** `terraform destroy` will fail; you must manually disable both and re-apply before destroy
-   - **Intended behavior:** Prevents accidental data loss in prod
-
-### 4. **NAT Gateway redundancy is intentional**
-   - **Current:** Only 2 NAT GWs (ap-south-1a, ap-south-1b); ap-south-1c routes through ap-south-1b
-   - **Cost optimization:** Real AWS pattern to reduce NAT costs; subnet route tables handle it via `az_to_nat` local
-   - **Risk:** If ap-south-1b NAT fails, ap-south-1c instances also lose internet; consider upgrading to 3 NATs in prod
-
-### 5. **ASG missing scaling policies**
-   - **Current:** Desired capacity fixed at 2; no target tracking
-   - **Missing:** Scale on `ALBRequestCountPerTarget` metric
-   - **Impact:** Won't auto-scale with traffic
-
-### 6. **Launch Template uses deprecated `instance_type` in ASG**
-   - **Current:** Single `instance_type` in launch template
-   - **Missing:** `mixed_instances_policy` in ASG for on-demand + spot instances
-   - **Check:** Verify asg.tf actually implements mixed instances
-
-### 7. **Secrets Manager policy is unnecessary**
-   - **Current:** `aws_secretsmanager_secret_policy` may be defined
-   - **Fix:** Remove if same-account access only (role permissions alone are enough)
-
-### 8. **Test.tf is scratch work**
-   - **Status:** Contains experimental locals; should be cleaned up before Phase 2
-
----
-
-## 📋 PRIORITY BUILD ORDER (Recommended)
-
-### Immediate (fixes & validation)
-1. **Verify & Fix IAM Policy Attachment** — ensure `role_ec2_instance` and `role_ecs_task` have correct policies attached
-2. **Fix Bastion SG** — restrict SSH to your IP or remove key pair
-3. **Remove unnecessary Secrets Manager policy** — clean up if same-account only
-4. **Clean up test.tf** — delete experimental code
-
-### Phase 1B (complete the flat tier)
-5. **Add ASG Scaling Policy** — target tracking on `ALBRequestCountPerTarget`
-6. **Add ASG Lifecycle Hook** — graceful connection draining on termination
-7. **Add ALB HTTPS Listener** — provision ACM cert, add port 443 listener, HTTP→HTTPS redirect
-8. **Add ALB Access Logs** — enable ALB to log to S3 logging bucket
-9. **Create WAF v2 Web ACL** — attach to ALB
-10. **Deploy CloudWatch Alarms** — 5 key metrics (ALB 5XX, ECS CPU, RDS connections, Redis memory, custom app metric)
-
-### Phase 1C (complete observability)
-11. **Create CloudWatch Dashboard** — as `templatefile()` JSON
-12. **Deploy CloudTrail** — account-level API audit
-13. **Enable Container Insights** — on ECS cluster (once cluster exists)
-14. **Setup X-Ray Tracing** — ECS task sidecar + instrumentation
-
-### Phase 2 (data layer completion)
-15. **Deploy ElastiCache Redis** — multi-AZ, KMS encryption, auth token in Secrets Manager
-16. **Convert RDS to Aurora Cluster** — `aws_rds_cluster` + `aws_rds_cluster_instance`
-17. **Setup RDS custom parameter group** — slow query logging
-18. **Setup RDS password rotation** — Secrets Manager lambda
-
-### Phase 2B (application compute)
-19. ✅ **ECS Cluster** — done (`for_each`, Container Insights enabled)
-20. ✅ **ECS Task Definition** — done (FARGATE, awsvpc, dynamic containers + volumes)
-21. ✅ **ECS Service** — done (service connect, ALB, alarms, network_configuration skeleton)
-22. ✅ **ECS Service Discovery** — done (`aws_service_discovery_http_namespace`)
-23. **Fix ECS wiring** — IAM role ARNs, CloudWatch log group ref, data source, subnets/SGs
-24. **Deploy ECR Repository** — image scanning, lifecycle policy (keep last 10)
-25. **Add `role_ecs_task_execution`** to `assume_role_policy` in tfvars
-
-### Phase 3 (multi-environment & modularization)
-24. **Refactor to multi-env structure** — `dev/`, `staging/`, `prod/` with separate `.tfvars` and state
-25. **Extract modules** — VPC, compute, data, IAM into separate module folders
-26. **Refactor root module** — call child modules, wire outputs to SSM
-
----
-
-## 📊 CURRENT STATE SUMMARY
-
-| Category | Status | Notes |
-|----------|--------|-------|
-| **Networking** | ✅ Complete | VPC, subnets (3 tiers, 3 AZs), NAT (2 only), routing |
-| **Security Groups** | ⚠️ 95% | Declared but Bastion too permissive; missing SG rule validations |
-| **KMS & Encryption** | ✅ Complete | Single CMK, used for RDS/S3/EBS |
-| **Secrets Manager** | ✅ Complete | DB credentials stored; needs policy cleanup |
-| **IAM** | ⚠️ 60% | Roles declared, complex policy structure, needs verification |
-| **RDS** | ✅ 80% | Single instance (not cluster); encrypted; multi-AZ; needs Aurora migration |
-| **ALB** | ⚠️ 50% | ALB + 2 target groups (instance + ip); missing HTTPS listener, WAF, access logs |
-| **ASG + EC2** | ⚠️ 70% | Launch template, ASG deployed; missing scaling policy, lifecycle hook |
-| **ECS Fargate** | ⚠️ 60% | Cluster, task def, service, EFS, service discovery done; wiring fixes + ECR remaining |
-| **ElastiCache** | ❌ 0% | Not started |
-| **ACM** | ❌ 0% | Not started |
-| **WAF v2** | ❌ 0% | Not started |
-| **CloudTrail** | ❌ 0% | Not started |
-| **CloudWatch** | ⚠️ 20% | Log group + Flow Logs only; missing alarms, dashboard |
-| **SSM Parameter Store** | ✅ 80% | Endpoints stored; missing Redis endpoint |
-| **Multi-env structure** | ❌ 0% | Still flat; Phase 2 work |
-| **Modules** | ❌ 0% | Not yet extracted; Phase 3 work |
-
-**Overall: ~55% complete** — Core networking & database done; ECS skeleton in progress; compute & observability need significant work; monitoring is a critical gap.
-
----
-
-## 🔍 FILES TO REVIEW & CLEAN UP
-
-1. **iam_role_and_policy.tf** — Complex policy structure; verify it works or simplify
-2. **asg.tf** — Add scaling policy and lifecycle hook
-3. **alb.tf** — Add HTTPS listener, access logs, WAF
-4. **test.tf** — Delete (scratch work)
-5. **s3_logging_bucket.tf** — Verify ALB access logs are wired once ALB listener exists
-6. **cloudwatch.tf** — Add alarms and dashboard
-7. **ssm_parameter_store.tf** — Add Redis endpoint once ElastiCache is built
-
----
-
-## ✨ Next Steps
-
-1. **Run `terraform plan` to identify any errors** in current code
-2. **Fix and validate Phase 1** (especially IAM, ASG, Bastion SG)
-3. **Build Phase 1B** (ALB listeners, WAF, alarms)
-4. **Then tackle Phase 2** (ElastiCache, Aurora, ECS)
+| Item | Phase | Reason deferred |
+|---|---|---|
+| Aurora cluster (`aws_rds_cluster`) | Phase 4 refactor | `aws_db_instance` is simpler for learning; Aurora adds ~3x cost |
+| Secrets Manager rotation lambda | Phase 3+ | Requires Lambda + rotation schedule; significant complexity |
+| GitHub Actions OIDC role | Phase 5 CI/CD | Not needed until pipeline phase |
+| WAF v2 WebACL | Phase 4+ | Optional security layer; adds cost |
+| CloudWatch Dashboard as `templatefile()` | Phase 3 | Currently inline `jsonencode` — works fine for flat code |
+| Multi-env directory structure | Phase 2 | Current flat code is single-env by design |
+| Terraform modules | Phase 3 | Flat first, then extract modules |
