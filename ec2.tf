@@ -14,12 +14,6 @@ data "aws_ami" "ubuntu" {
   }
 }
 
-# ssh-keygen -t ed25519 -f ./strata-key
-resource "aws_key_pair" "strata_key" {
-  key_name   = "strata-server-key"
-  public_key = file("${path.module}/strata-key.pub")
-}
-
 locals {
   subnet_map = {
     public  = aws_subnet.strata_public_subnet
@@ -30,10 +24,11 @@ locals {
 resource "aws_instance" "strata_server" {
   ami                         = data.aws_ami.ubuntu.id
   instance_type               = var.aws_bastian_instance.instance_type
-  key_name                    = aws_key_pair.strata_key.key_name
   subnet_id                   = aws_subnet.strata_public_subnet[var.aws_bastian_instance.subnet_az].id
   associate_public_ip_address = var.aws_bastian_instance.associate_public_ip_address
   vpc_security_group_ids      = [aws_security_group.strata_sg["bastion"].id]
+  # SSM Session Manager — no SSH key or open port 22 needed
+  iam_instance_profile = aws_iam_instance_profile.strata.name
 
   tags = local.tags
 }
