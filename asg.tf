@@ -8,7 +8,6 @@ resource "aws_launch_template" "strata" {
   name_prefix   = "strata-app-lt"
   image_id      = data.aws_ami.ubuntu.id
   instance_type = var.launch_template.instance_type
-  key_name      = aws_key_pair.strata_key.key_name # Using same key for bastion and pvt server for now
   vpc_security_group_ids = [
     aws_security_group.strata_sg["ec2"].id
   ]
@@ -39,7 +38,7 @@ resource "aws_autoscaling_group" "strata" {
   health_check_grace_period = var.asg.health_check_grace_period
   health_check_type         = var.asg.health_check_type
   desired_capacity          = var.asg.desired_capacity
-  target_group_arns = [aws_lb_target_group.strata["strataInstance"].arn]
+  target_group_arns         = [aws_lb_target_group.strata["strataInstance"].arn]
   launch_template {
     id      = aws_launch_template.strata.id
     version = "$Latest"
@@ -63,4 +62,21 @@ resource "aws_autoscaling_group" "strata" {
   #       value               = tag.value.value
   #     }
   #   }
+}
+
+# Scale out/in based on average ALB request count per instance.
+# AWS recommends this metric over CPU for web-tier ASGs.
+resource "aws_autoscaling_policy" "strata_target_tracking" {
+  name                   = "strata-alb-request-count-policy"
+  autoscaling_group_name = aws_autoscaling_group.strata.name
+  policy_type            = "TargetTrackingScaling"
+
+  target_tracking_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ALBRequestCountPerTarget"
+      resource_label         = "${aws_lb.strata["strataLB"].arn_suffix}/${aws_lb_target_group.strata["strataInstance"].arn_suffix}"
+    }
+    # Scale out when avg request count per instance exceeds 1000 req/min
+    target_value = 1000.0
+  }
 }
