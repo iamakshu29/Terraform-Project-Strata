@@ -1,7 +1,8 @@
-# Public Routes and Route Table
+# Public Route Table — one shared table, one 0.0.0.0/0 → IGW route for all public subnets
 
 resource "aws_route_table" "strata_public" {
   vpc_id = aws_vpc.strata.id
+  tags   = merge({ Name = "public-rt" }, local.tags)
 }
 
 resource "aws_route" "strata_public" {
@@ -18,44 +19,39 @@ resource "aws_route_table_association" "strata_public" {
   route_table_id = aws_route_table.strata_public.id
 }
 
+# Private Route Tables — one per AZ so each AZ routes through its own NAT GW.
+# ap-south-1c shares ap-south-1b's NAT GW (see az_to_nat in locals.tf).
+
 resource "aws_route_table" "strata_private" {
-  vpc_id = local.vpc_cidr
+  for_each = var.private_subnets
+  vpc_id   = aws_vpc.strata.id
+  tags     = merge({ Name = "private-rt-${each.key}" }, local.tags)
 }
 
-# Private Routes and Route Table
-
 resource "aws_route" "strata_private" {
-  for_each = var.route.private_routes
+  for_each = var.private_subnets
 
-  route_table_id         = aws_route_table.strata_private.id
-  destination_cidr_block = each.value.destination_cidr
-
-  # go to map az_to_nat and then get the key as the key matched with routes
-  nat_gateway_id = aws_nat_gateway.strata[local.az_to_nat[each.key]].id
+  route_table_id         = aws_route_table.strata_private[each.key].id
+  destination_cidr_block = "0.0.0.0/0"
+  nat_gateway_id         = aws_nat_gateway.strata[local.az_to_nat[each.key]].id
 }
 
 resource "aws_route_table_association" "strata_private" {
   for_each       = var.private_subnets
   subnet_id      = aws_subnet.strata_private_subnet[each.key].id
-  route_table_id = aws_route_table.strata_private.id
+  route_table_id = aws_route_table.strata_private[each.key].id
 }
 
-# Data Routes and Route Table
+# Data Route Tables — one per AZ, no internet route (data tier is fully isolated).
 
 resource "aws_route_table" "strata_data" {
-  vpc_id = local.vpc_cidr
-}
-
-resource "aws_route" "strata_data" {
-  for_each = var.route.data_routes
-
-  route_table_id         = aws_route_table.strata_data.id
-  destination_cidr_block = each.value.destination_cidr
-  nat_gateway_id         = aws_nat_gateway.strata[local.az_to_nat[each.key]].id
+  for_each = var.data_subnets
+  vpc_id   = aws_vpc.strata.id
+  tags     = merge({ Name = "data-rt-${each.key}" }, local.tags)
 }
 
 resource "aws_route_table_association" "strata_data" {
   for_each       = var.data_subnets
   subnet_id      = aws_subnet.strata_data_subnet[each.key].id
-  route_table_id = aws_route_table.strata_data.id
+  route_table_id = aws_route_table.strata_data[each.key].id
 }

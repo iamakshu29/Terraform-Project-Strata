@@ -36,8 +36,10 @@ locals {
 resource "aws_vpc_security_group_ingress_rule" "allow_tls_ipv4_strata_server_rule" {
   for_each = local.ingress_rules
 
-  security_group_id            = aws_security_group.strata_sg[each.value.sg_name].id
-  referenced_security_group_id = try(each.value.rule.source_security_group, null)
+  security_group_id = aws_security_group.strata_sg[each.value.sg_name].id
+
+  # Resolve the source SG key to an actual ID; falls back to null if no source_security_group key exists.
+  referenced_security_group_id = try(aws_security_group.strata_sg[each.value.rule.source_security_group].id, null)
 
   cidr_ipv4   = try(each.value.rule.cidr_ipv4, null)
   from_port   = each.value.rule.from_port
