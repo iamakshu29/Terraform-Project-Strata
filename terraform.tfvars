@@ -273,7 +273,7 @@ lb = {
   strataLB = {
     internal                   = false # public-facing ALB in public subnets
     load_balancer_type         = "application"
-    enable_deletion_protection = true
+    enable_deletion_protection = false
     port                       = "443"
     protocol                   = "HTTPS"
   }
