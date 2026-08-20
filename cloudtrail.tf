@@ -1,7 +1,3 @@
-locals {
-  trail_arn = "arn:${data.aws_partition.current.partition}:cloudtrail:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:trail/${var.cloudtrail.name}"
-}
-
 resource "aws_cloudtrail" "strata_trail" {
   name                          = var.cloudtrail.name
   s3_bucket_name                = aws_s3_bucket.strata_bucket["strata_logging_bucket"].id

@@ -589,45 +589,62 @@ elasticache = {
   apply_immediately        = false
 }
 
-
-# change dim_key and value
 metrics = {
   metric_1 = {
-    metric_name = "HTTPCode_ELB_5XX_Rate"
+    metric_name = "HTTPCode_ELB_5XX_Count"
     namespace   = "AWS/ApplicationELB"
     period      = 120
-    stat        = "Average"
+    stat        = "Sum"
     # for percentage --extended-statistics p99 p95 p50.
     unit            = "Count"
     dimension_key   = "LoadBalancer"
-    dimension_value = "app/web"
+    dimension_value = "lb-arn_suffix"
+    threshold       = 10
+    description     = "ALB 5XX errors"
   }
   metric_2 = {
-    metric_name     = "RDS_Connections_Count"
+    metric_name     = "DatabaseConnections"
     namespace       = "AWS/RDS"
-    period          = 120
-    stat            = "Sum"
-    unit            = "Count"
-    dimension_key   = "LoadBalancer"
-    dimension_value = "app/web"
-  }
-  metric_3 = {
-    metric_name     = "ECS_CPU_Utilization"
-    namespace       = "AWS/ECS"
-    period          = 120
-    stat            = "Sum"
-    unit            = "Count"
-    dimension_key   = "LoadBalancer"
-    dimension_value = "app/web"
-  }
-  metric_4 = {
-    metric_name     = "ElastiCache_Redis_Memory_Utilization"
-    namespace       = "AWS/RedisCache"
     period          = 120
     stat            = "Average"
     unit            = "Count"
-    dimension_key   = "LoadBalancer"
-    dimension_value = "app/web"
+    dimension_key   = "DBInstanceIdentifier"
+    dimension_value = "rds_identifier"
+    threshold       = 80
+    description     = "RDS database connections"
+  }
+  metric_3 = {
+    metric_name     = "CPUUtilization"
+    namespace       = "AWS/ECS"
+    period          = 120
+    stat            = "Average"
+    unit            = "Percent"
+    dimension_key   = "ClusterName"
+    dimension_value = "ecs_cluster"
+    threshold       = 80
+    description     = "ECS cluster CPU utilization"
+  }
+  metric_4 = {
+    metric_name     = "CPUUtilization"
+    namespace       = "AWS/ECS"
+    period          = 120
+    stat            = "Average"
+    unit            = "Percent"
+    dimension_key   = "ServiceName"
+    dimension_value = "ecs_service"
+    threshold       = 80
+    description     = "ECS service CPU utilization"
+  }
+  metric_5 = {
+    metric_name     = "DatabaseMemoryUsagePercentage"
+    namespace       = "AWS/ElastiCache"
+    period          = 120
+    stat            = "Average"
+    unit            = "Count"
+    dimension_key   = "ReplicationGroupId"
+    dimension_value = "elasticache_rep_group_id"
+    threshold       = 80
+    description     = "ElastiCache Redis memory utilization"
   }
 }
 
