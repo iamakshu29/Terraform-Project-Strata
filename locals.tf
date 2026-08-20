@@ -17,8 +17,8 @@ locals {
     "lb-arn_suffix"            = aws_lb.strata["strataLB"].arn_suffix
     "rds_identifier"           = var.rds.identifier
     "elasticache_rep_group_id" = var.elasticache.replication_group_id
-    "ecs_cluster"              = aws_ecs_cluster.strata_cluster["strata_cluster"].name
-    "ecs_service"              = aws_ecs_service.strata_service["strata_service"].name
+    "ecs_cluster"              = var.ecs_cluster["strata_cluster"].name
+    "ecs_service"              = var.ecs_service["strata_service"].name
     "lb-target_group"          = aws_lb_target_group.strata["strataInstance"].arn_suffix
   }
 

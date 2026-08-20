@@ -37,13 +37,3 @@ resource "aws_elasticache_replication_group" "strata_redis" {
 
   tags = local.tags
 }
-
-output "redis_primary_endpoint" {
-  description = "Primary endpoint for Redis write operations"
-  value       = aws_elasticache_replication_group.strata_redis.primary_endpoint_address
-}
-
-output "redis_reader_endpoint" {
-  description = "Reader endpoint for Redis read operations (use for read-heavy workloads)"
-  value       = aws_elasticache_replication_group.strata_redis.reader_endpoint_address
-}

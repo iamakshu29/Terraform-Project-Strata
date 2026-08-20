@@ -130,8 +130,7 @@ resource "aws_ecs_service" "strata_service" {
   alarms {
     enable   = each.value.alarms_enabled
     rollback = each.value.rollback
-    alarm_names = [
-      aws_cloudwatch_metric_alarm.strata_metric_alarm_cw.alarm_name
-    ]
+    # alarm is for_each = var.metrics so iterate over the map
+    alarm_names = [for v in aws_cloudwatch_metric_alarm.strata_metric_alarm_cw : v.alarm_name]
   }
 }
