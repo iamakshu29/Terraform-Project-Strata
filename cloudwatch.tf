@@ -16,10 +16,6 @@ resource "aws_flow_log" "strata_flow_log" {
 
 # https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/aws-services-cloudwatch-metrics.html
 
-## Need fixing for it....you're putting metrics with different units and meanings into the same alarm: but has same threshold and evaluation periods liek same for % , count, number of requests
-## Those probably deserve separate alarms with separate thresholds.
-# also in tfvars we can't provide the dimension_value dynamically so need a local for this to map them.
-
 resource "aws_cloudwatch_metric_alarm" "strata_metric_alarm_cw" {
   for_each = var.metrics
 
