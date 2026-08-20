@@ -47,6 +47,6 @@ resource "aws_kms_key" "strata" {
 }
 
 resource "aws_kms_alias" "strata" {
-  name          = "alias/strata-rds-key"
+  name          = "alias/strata-cmk"
   target_key_id = aws_kms_key.strata.key_id
 }

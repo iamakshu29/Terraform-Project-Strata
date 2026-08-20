@@ -11,7 +11,7 @@ data "aws_caller_identity" "current" {}
 data "aws_ami" "ubuntu" {
   most_recent = true
 
-  # Use the Packer-baked AMI (Redis pre-installed) owned by this account
+  # run packer build before terraform apply
   owners = [data.aws_caller_identity.current.account_id]
 
   filter {

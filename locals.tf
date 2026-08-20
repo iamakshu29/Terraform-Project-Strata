@@ -42,14 +42,13 @@ locals {
     kms            = "com.amazonaws.${var.aws_region}.kms"
   }
 
-  # SSM parameter paths keyed by env — used in aws_ssm_parameter for_each
   parameters = {
-    "/${var.env_tag}/app/db/endpoint"       = aws_db_instance.strata_db.endpoint
-    "/${var.env_tag}/app/s3/bucket"         = aws_s3_bucket.strata_bucket["strata-bucket"].bucket
-    "/${var.env_tag}/app/s3_logging/bucket" = aws_s3_bucket.strata_bucket["strata-logging-bucket"].bucket
-    "/${var.env_tag}/app/redis/primary"     = aws_elasticache_replication_group.strata_redis.primary_endpoint_address
-    "/${var.env_tag}/app/redis/reader"      = aws_elasticache_replication_group.strata_redis.reader_endpoint_address
-    "/${var.env_tag}/app/service/endpoint"  = aws_lb.strata["strataLB"].dns_name
+    "/strata/app/db/endpoint"       = aws_db_instance.strata_db.endpoint
+    "/strata/app/s3/bucket"         = aws_s3_bucket.strata_bucket["strata-bucket"].bucket
+    "/strata/app/s3_logging/bucket" = aws_s3_bucket.strata_bucket["strata-logging-bucket"].bucket
+    "/strata/app/redis/primary"     = aws_elasticache_replication_group.strata_redis.primary_endpoint_address
+    "/strata/app/redis/reader"      = aws_elasticache_replication_group.strata_redis.reader_endpoint_address
+    "/strata/app/service/endpoint"  = aws_lb.strata["strataLB"].dns_name
   }
 
   # Flattens var.iam_policy into a single map keyed by "role-policy" for for_each
