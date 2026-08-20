@@ -17,32 +17,32 @@ resource "aws_flow_log" "strata_flow_log" {
 # https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/aws-services-cloudwatch-metrics.html
 
 resource "aws_cloudwatch_metric_alarm" "strata_metric_alarm_cw" {
-  alarm_name                = "strata-cw-alarm"
-  comparison_operator       = "GreaterThanOrEqualToThreshold"
-  evaluation_periods        = 2
-  threshold                 = 80
-  alarm_description         = "This metric monitors ec2 cpu utilization"
-  insufficient_data_actions = []
+  for_each = var.metrics
 
-  dynamic "metric_query" {
-    for_each = var.metrics
-    content {
-      id = metric_query.key
+  alarm_name          = "strata-${each.key}-alarm"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
 
-      metric {
-        metric_name = metric_query.value.metric_name
-        namespace   = metric_query.value.namespace
-        period      = metric_query.value.period
-        stat        = metric_query.value.stat
-        unit        = metric_query.value.unit
+  evaluation_periods = 2
+  period             = each.value.period
+  threshold          = each.value.threshold
 
-        dimensions = {
-          (metric_query.value.dimension_key) = metric_query.value.dimension_value
-        }
-      }
-    }
+  namespace   = each.value.namespace
+  metric_name = each.value.metric_name
+  statistic   = each.value.stat
+  unit        = each.value.unit
+
+  alarm_description = each.value.description
+
+  dimensions = {
+    (each.value.dimension_key) = local.dimension_value_to_arn[
+      each.value.dimension_value
+    ]
   }
+
+  insufficient_data_actions = []
 }
+
+# Metrics list comes as [namespace, metric_name, dimension_key, dimension_value]
 
 resource "aws_cloudwatch_dashboard" "strata" {
   dashboard_name = "strata-${var.env_tag}"
@@ -58,8 +58,8 @@ resource "aws_cloudwatch_dashboard" "strata" {
           period = 300
           stat   = "Sum"
           metrics = [
-            ["AWS/ApplicationELB", "RequestCount", "LoadBalancer", aws_lb.strata["strataLB"].arn_suffix],
-            ["AWS/ApplicationELB", "HTTPCode_ELB_5XX_Count", "LoadBalancer", aws_lb.strata["strataLB"].arn_suffix],
+            ["AWS/ApplicationELB", "RequestCount", "LoadBalancer", local.dimension_value_to_arn["lb-arn_suffix"]],
+            ["AWS/ApplicationELB", "HTTPCode_ELB_5XX_Count", "LoadBalancer", local.dimension_value_to_arn["lb-arn_suffix"]],
           ]
         }
       },
@@ -72,7 +72,7 @@ resource "aws_cloudwatch_dashboard" "strata" {
           period = 300
           stat   = "p99"
           metrics = [
-            ["AWS/ApplicationELB", "TargetResponseTime", "LoadBalancer", aws_lb.strata["strataLB"].arn_suffix],
+            ["AWS/ApplicationELB", "TargetResponseTime", "LoadBalancer", local.dimension_value_to_arn["lb-arn_suffix"]],
           ]
         }
       },
@@ -85,8 +85,8 @@ resource "aws_cloudwatch_dashboard" "strata" {
           period = 300
           stat   = "Average"
           metrics = [
-            ["AWS/RDS", "CPUUtilization", "DBInstanceIdentifier", var.rds.identifier],
-            ["AWS/RDS", "DatabaseConnections", "DBInstanceIdentifier", var.rds.identifier],
+            ["AWS/RDS", "CPUUtilization", "DBInstanceIdentifier", local.dimension_value_to_arn["rds_identifier"]],
+            ["AWS/RDS", "DatabaseConnections", "DBInstanceIdentifier", local.dimension_value_to_arn["rds_identifier"]]
           ]
         }
       },
@@ -99,8 +99,8 @@ resource "aws_cloudwatch_dashboard" "strata" {
           period = 300
           stat   = "Average"
           metrics = [
-            ["AWS/ElastiCache", "DatabaseMemoryUsagePercentage", "ReplicationGroupId", var.elasticache.replication_group_id],
-            ["AWS/ElastiCache", "CurrConnections", "ReplicationGroupId", var.elasticache.replication_group_id],
+            ["AWS/ElastiCache", "DatabaseMemoryUsagePercentage", "ReplicationGroupId", local.dimension_value_to_arn["elasticache_rep_group_id"]],
+            ["AWS/ElastiCache", "CurrConnections", "ReplicationGroupId", local.dimension_value_to_arn["elasticache_rep_group_id"]]
           ]
         }
       },
@@ -113,8 +113,8 @@ resource "aws_cloudwatch_dashboard" "strata" {
           period = 300
           stat   = "Average"
           metrics = [
-            ["AWS/ECS", "CPUUtilization", "ClusterName", "strata-app-cluster"],
-            ["AWS/ECS", "MemoryUtilization", "ClusterName", "strata-app-cluster"],
+            ["AWS/ECS", "CPUUtilization", "ClusterName", local.dimension_value_to_arn["ecs_cluster"], "ServiceName", local.dimension_value_to_arn["ecs_service"]],
+            ["AWS/ECS", "MemoryUtilization", "ClusterName", local.dimension_value_to_arn["ecs_cluster"], "ServiceName", local.dimension_value_to_arn["ecs_service"]]
           ]
         }
       },
@@ -123,11 +123,11 @@ resource "aws_cloudwatch_dashboard" "strata" {
         width  = 12
         height = 6
         properties = {
-          title  = "ASG — Healthy Host Count"
+          title  = "ALB Target Group — Healthy Host Count"
           period = 300
           stat   = "Average"
           metrics = [
-            ["AWS/ApplicationELB", "HealthyHostCount", "TargetGroup", aws_lb_target_group.strata["strataInstance"].arn_suffix, "LoadBalancer", aws_lb.strata["strataLB"].arn_suffix],
+            ["AWS/ApplicationELB", "HealthyHostCount", "TargetGroup", local.dimension_value_to_arn["lb-target_group"], "LoadBalancer", local.dimension_value_to_arn["lb-arn_suffix"]]
           ]
         }
       },
