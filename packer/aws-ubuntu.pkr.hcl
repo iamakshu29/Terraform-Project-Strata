@@ -52,11 +52,10 @@ build {
       "FOO=hello world",
     ]
     inline = [
-      "echo Installing Redis",
-      "sleep 30",
-      "sudo apt-get update",
-      "sudo apt-get install -y redis-server",
-      "echo \"FOO is $FOO\" > example.txt",
+      "echo Installing Nginx",
+      "sudo apt update",
+      "sudo apt install nginx",
+      "sudo systemctl enable --now nginx"
     ]
   }
 

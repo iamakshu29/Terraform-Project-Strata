@@ -45,8 +45,8 @@ locals {
   # SSM parameter paths keyed by env — used in aws_ssm_parameter for_each
   parameters = {
     "/${var.env_tag}/app/db/endpoint"       = aws_db_instance.strata_db.endpoint
-    "/${var.env_tag}/app/s3/bucket"         = aws_s3_bucket.strata_bucket["strata_bucket"].bucket
-    "/${var.env_tag}/app/s3_logging/bucket" = aws_s3_bucket.strata_bucket["strata_logging_bucket"].bucket
+    "/${var.env_tag}/app/s3/bucket"         = aws_s3_bucket.strata_bucket["strata-bucket"].bucket
+    "/${var.env_tag}/app/s3_logging/bucket" = aws_s3_bucket.strata_bucket["strata-logging-bucket"].bucket
     "/${var.env_tag}/app/redis/primary"     = aws_elasticache_replication_group.strata_redis.primary_endpoint_address
     "/${var.env_tag}/app/redis/reader"      = aws_elasticache_replication_group.strata_redis.reader_endpoint_address
     "/${var.env_tag}/app/service/endpoint"  = aws_lb.strata["strataLB"].dns_name

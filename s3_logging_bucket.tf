@@ -10,7 +10,7 @@ data "aws_iam_policy_document" "strata_logging_bucket_policy" {
       type        = "Service"
     }
     actions   = ["s3:PutObject", "s3:GetObject"]
-    resources = ["${aws_s3_bucket.strata_bucket["strata_logging_bucket"].arn}/*"]
+    resources = ["${aws_s3_bucket.strata_bucket["strata-logging-bucket"].arn}/*"]
     condition {
       test     = "StringEquals"
       variable = "aws:SourceAccount"
@@ -26,7 +26,7 @@ data "aws_iam_policy_document" "strata_logging_bucket_policy" {
       identifiers = ["cloudtrail.amazonaws.com"]
     }
     actions   = ["s3:GetBucketAcl"]
-    resources = [aws_s3_bucket.strata_bucket["strata_logging_bucket"].arn]
+    resources = [aws_s3_bucket.strata_bucket["strata-logging-bucket"].arn]
     condition {
       test     = "StringEquals"
       variable = "aws:SourceArn"
@@ -42,7 +42,7 @@ data "aws_iam_policy_document" "strata_logging_bucket_policy" {
       identifiers = ["cloudtrail.amazonaws.com"]
     }
     actions   = ["s3:PutObject"]
-    resources = ["${aws_s3_bucket.strata_bucket["strata_logging_bucket"].arn}/${var.cloudtrail.s3_key_prefix}/AWSLogs/${data.aws_caller_identity.current.account_id}/*"]
+    resources = ["${aws_s3_bucket.strata_bucket["strata-logging-bucket"].arn}/${var.cloudtrail.s3_key_prefix}/AWSLogs/${data.aws_caller_identity.current.account_id}/*"]
     condition {
       test     = "StringEquals"
       variable = "s3:x-amz-acl"
@@ -63,7 +63,7 @@ data "aws_iam_policy_document" "strata_logging_bucket_policy" {
       identifiers = ["delivery.logs.amazonaws.com"]
     }
     actions   = ["s3:GetBucketAcl"]
-    resources = [aws_s3_bucket.strata_bucket["strata_logging_bucket"].arn]
+    resources = [aws_s3_bucket.strata_bucket["strata-logging-bucket"].arn]
   }
 
   statement {
@@ -74,7 +74,7 @@ data "aws_iam_policy_document" "strata_logging_bucket_policy" {
       identifiers = ["delivery.logs.amazonaws.com"]
     }
     actions   = ["s3:PutObject"]
-    resources = ["${aws_s3_bucket.strata_bucket["strata_logging_bucket"].arn}/alb-logs/*"]
+    resources = ["${aws_s3_bucket.strata_bucket["strata-logging-bucket"].arn}/alb-logs/*"]
     condition {
       test     = "StringEquals"
       variable = "s3:x-amz-acl"
@@ -84,7 +84,7 @@ data "aws_iam_policy_document" "strata_logging_bucket_policy" {
 }
 
 resource "aws_s3_bucket_policy" "strata_logging_bucket" {
-  bucket     = aws_s3_bucket.strata_bucket["strata_logging_bucket"].id
+  bucket     = aws_s3_bucket.strata_bucket["strata-logging-bucket"].id
   policy     = data.aws_iam_policy_document.strata_logging_bucket_policy.json
   depends_on = [aws_s3_bucket_public_access_block.strata_bucket_access_block]
 }
@@ -94,7 +94,7 @@ resource "aws_s3_bucket_logging" "strata_logging_config" {
   for_each = { for k, v in var.s3 : k => v if !v.logging }
 
   bucket        = aws_s3_bucket.strata_bucket[each.key].id
-  target_bucket = aws_s3_bucket.strata_bucket["strata_logging_bucket"].id
+  target_bucket = aws_s3_bucket.strata_bucket["strata-logging-bucket"].id
   target_prefix = "log/"
   target_object_key_format {
     partitioned_prefix {

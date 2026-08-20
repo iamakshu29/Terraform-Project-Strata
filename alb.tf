@@ -10,7 +10,7 @@ resource "aws_lb" "strata" {
   enable_deletion_protection = each.value.enable_deletion_protection
 
   access_logs {
-    bucket  = aws_s3_bucket.strata_bucket["strata_logging_bucket"].bucket
+    bucket  = aws_s3_bucket.strata_bucket["strata-logging-bucket"].bucket
     prefix  = "alb-logs"
     enabled = true
   }

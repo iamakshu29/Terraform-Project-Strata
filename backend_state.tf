@@ -6,7 +6,7 @@ resource "aws_s3_bucket" "strata_state" {
   bucket = local.state_bucket_name
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 
   tags = merge({ Name = "strata-terraform-state" }, local.tags)

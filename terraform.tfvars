@@ -1,6 +1,6 @@
 aws_region = "ap-south-1"
 
-domain_name = "strata.example.com"
+domain_name = "strata.example.in"
 
 env_tag = "dev"
 
@@ -539,7 +539,7 @@ cloudwatch = {
 }
 
 s3 = {
-  strata_bucket = {
+  strata-bucket = {
     block_public_acls              = true
     block_public_policy            = true
     ignore_public_acls             = true
@@ -554,7 +554,7 @@ s3 = {
     delete_data_after              = 365
     logging                        = false
   }
-  strata_logging_bucket = {
+  strata-logging-bucket = {
     block_public_acls              = true
     block_public_policy            = true
     ignore_public_acls             = true
