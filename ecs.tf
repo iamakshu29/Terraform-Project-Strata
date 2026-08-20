@@ -9,7 +9,7 @@ resource "aws_efs_file_system" "strata_efs" {
     transition_to_ia = each.value.transition_to_ia
   }
 
-  tags = local.tags
+  tags = merge({ Name = "strata-efs-${each.key}" }, local.tags)
 }
 
 # Mount targets — one per private subnet AZ so ECS tasks in every AZ can reach EFS

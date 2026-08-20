@@ -5,7 +5,7 @@ resource "aws_elasticache_subnet_group" "strata_redis" {
   name       = "strata-redis-subnet-group"
   subnet_ids = [for s in aws_subnet.strata_data_subnet : s.id]
 
-  tags = local.tags
+  tags = merge({ Name = "strata-redis-subnet-group" }, local.tags)
 }
 
 resource "aws_elasticache_replication_group" "strata_redis" {
@@ -35,5 +35,5 @@ resource "aws_elasticache_replication_group" "strata_redis" {
 
   apply_immediately = var.elasticache.apply_immediately
 
-  tags = local.tags
+  tags = merge({ Name = "strata-redis" }, local.tags)
 }

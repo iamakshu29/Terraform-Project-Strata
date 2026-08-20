@@ -30,7 +30,22 @@ resource "aws_instance" "strata_server" {
   # SSM Session Manager — no SSH key or open port 22 needed
   iam_instance_profile = aws_iam_instance_profile.strata.name
 
-  tags = local.tags
+  # Wait for IAM propagation before launching — avoids race condition on first apply
+  depends_on = [aws_iam_role_policy_attachment.strata_ssm_core]
+
+  root_block_device {
+    volume_type           = "gp3"
+    volume_size           = 20
+    encrypted             = true
+    kms_key_id            = aws_kms_key.strata.arn
+    delete_on_termination = true
+  }
+
+  tags = merge({ Name = "strata-bastion" }, local.tags)
+
+  timeouts {
+    create = "15m"
+  }
 }
 
 resource "aws_ebs_volume" "strata_data_vol" {
@@ -39,7 +54,7 @@ resource "aws_ebs_volume" "strata_data_vol" {
   encrypted         = true
   kms_key_id        = aws_kms_key.strata.arn
 
-  tags = local.tags
+  tags = merge({ Name = "strata-bastion-data-vol" }, local.tags)
 }
 
 resource "aws_volume_attachment" "strata_vol_att" {

@@ -3,7 +3,7 @@ resource "aws_s3_bucket" "strata_bucket" {
 
   bucket = each.key
 
-  tags = local.tags
+  tags = merge({ Name = each.key }, local.tags)
 }
 
 # S3 Versioning block

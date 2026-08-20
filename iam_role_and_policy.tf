@@ -76,7 +76,7 @@ resource "aws_iam_role" "strata" {
     ]
   })
 
-  tags = local.tags
+  tags = merge({ Name = each.key }, local.tags)
 }
 
 # Controls who can access the secret at the secret level

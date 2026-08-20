@@ -4,7 +4,7 @@ resource "aws_secretsmanager_secret" "strata_db_secret" {
   name        = "starta_secrets_manager"
   kms_key_id  = aws_kms_key.strata.id
 
-  tags = local.tags
+  tags = merge({ Name = "strata-db-secret" }, local.tags)
 }
 
 # To stores the actual username/password

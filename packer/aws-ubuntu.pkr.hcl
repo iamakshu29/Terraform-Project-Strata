@@ -27,6 +27,7 @@ source "amazon-ebs" "ubuntu" {
   ami_name      = "${var.ami_prefix}-${local.timestamp}"
   instance_type = "t2.micro"
   region        = "us-east-1"
+  encrypt_boot  = true # encrypt the AMI snapshot at build time
   source_ami_filter {
     most_recent = true
 

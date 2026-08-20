@@ -8,7 +8,7 @@ resource "aws_acm_certificate" "strata" {
     create_before_destroy = true
   }
 
-  tags = local.tags
+  tags = merge({ Name = "strata-certificate" }, local.tags)
 }
 
 # Validation uses the Route 53 records created in route53.tf

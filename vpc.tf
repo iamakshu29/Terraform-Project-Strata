@@ -4,7 +4,7 @@ resource "aws_vpc" "strata" {
   enable_dns_hostnames = true
   enable_dns_support   = true
 
-  tags = local.tags
+  tags = merge({ Name = "strata-vpc" }, local.tags)
 }
 
 # Public Subnets
@@ -47,16 +47,14 @@ resource "aws_db_subnet_group" "strata_db_group" {
   # Fetches the IDs of data subnets from your existing subnet map
   subnet_ids = [for s in aws_subnet.strata_data_subnet : s.id]
 
-  tags = {
-    Name = "Strata DB Subnet Group"
-  }
+  tags = merge({ Name = "strata-db-subnet-group" }, local.tags)
 }
 
 # IGW
 resource "aws_internet_gateway" "strata" {
   vpc_id = aws_vpc.strata.id
 
-  tags = local.tags
+  tags = merge({ Name = "strata-igw" }, local.tags)
 }
 
 # EIPs

@@ -15,7 +15,7 @@ resource "aws_lb" "strata" {
     enabled = true
   }
 
-  tags = local.tags
+  tags = merge({ Name = each.key }, local.tags)
 }
 
 resource "aws_lb_target_group" "strata" {
