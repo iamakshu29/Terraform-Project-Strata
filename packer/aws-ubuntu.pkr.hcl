@@ -28,47 +28,23 @@ source "amazon-ebs" "ubuntu" {
   instance_type = "t2.micro"
   region        = "ap-south-1"
   encrypt_boot  = true # encrypt the AMI snapshot at build time
-  ami_regions   = ["ap-south-1"] # copy to deployment region
   source_ami_filter {
     most_recent = true
 
     owners = ["099720109477"] # Canonical
 
-    filter {
-      name   = "name"
-      values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
-    }
-
-    filter {
-      name   = "virtualization-type"
-      values = ["hvm"]
-    }
-  }
-  ssh_username = "ubuntu"
-}
-
-source "amazon-ebs" "ubuntu-focal" {
-  ami_name      = "${var.ami_prefix}-focal-${local.timestamp}"
-  instance_type = "t2.micro"
-  region        = "us-west-2"
-  source_ami_filter {
     filters = {
-      name                = "ubuntu/images/*ubuntu-focal-20.04-amd64-server-*"
-      root-device-type    = "ebs"
+      name                = "ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"
       virtualization-type = "hvm"
     }
-    most_recent = true
-    owners      = ["099720109477"]
   }
   ssh_username = "ubuntu"
 }
-
 
 build {
   name = "learn-packer"
   sources = [
-    "source.amazon-ebs.ubuntu",
-    "source.amazon-ebs.ubuntu-focal"
+    "source.amazon-ebs.ubuntu"
   ]
 
   provisioner "shell" {
@@ -86,10 +62,5 @@ build {
 
   provisioner "shell" {
     inline = ["echo This provisioner runs last"]
-  }
-
-  post-processors {
-    post-processor "vagrant" {}
-    post-processor "compress" {}
   }
 }
