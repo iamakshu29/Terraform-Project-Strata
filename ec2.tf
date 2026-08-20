@@ -14,7 +14,6 @@ resource "aws_instance" "strata_server" {
     volume_type           = "gp3"
     volume_size           = 20
     encrypted             = true
-    kms_key_id            = aws_kms_key.strata.arn
     delete_on_termination = true
   }
 
