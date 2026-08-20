@@ -1,26 +1,3 @@
-data "aws_ami" "ubuntu" {
-  most_recent = true
-
-  owners = ["099720109477"] # Canonical
-
-  filter {
-    name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
-  }
-
-  filter {
-    name   = "virtualization-type"
-    values = ["hvm"]
-  }
-}
-
-locals {
-  subnet_map = {
-    public  = aws_subnet.strata_public_subnet
-    private = aws_subnet.strata_private_subnet
-  }
-}
-
 resource "aws_instance" "strata_server" {
   ami                         = data.aws_ami.ubuntu.id
   instance_type               = var.aws_bastian_instance.instance_type

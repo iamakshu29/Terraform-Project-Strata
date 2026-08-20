@@ -8,39 +8,6 @@
 
 # NEEDS REWORK
 
-locals {
-  policies = merge([
-    for role_name, policy in var.iam_policy : {
-      for policy_name, policy_element in policy :
-      "${role_name}-${policy_name}" => {
-        role_name       = role_name # role key — used to look up aws_iam_role.strata
-        policy_name     = policy_name
-        policy_elements = policy_element
-      }
-    }
-  ]...)
-
-  #### The map merges out as
-
-  # policies = {
-  #   "role_ecs_task-s3_read_write" = {
-  #     role_name = "role_ecs_task"
-  #     policy_name = "s3_read_write"
-  #     policy_elements = {
-  #       sid    = "S3ReadWrite"
-  #       effect = "Allow"
-  #       actions = [
-  #         "s3:GetObject",
-  #         "s3:WriteObject"
-  #       ]
-  #       resources = ["arn:aws:s3:::my-bucket/*"]
-  #     }
-
-  #   },"role_ecs_task-read_secrets" = {}, "role_ecs_task-read_cloudwatch_logs" = {},
-  #     "role_ec2_instance-read_cloudwatch_logs" = {}
-  # }
-}
-
 data "aws_iam_policy_document" "policy" {
   for_each = local.policies
   statement {

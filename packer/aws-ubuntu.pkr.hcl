@@ -26,8 +26,9 @@ locals {
 source "amazon-ebs" "ubuntu" {
   ami_name      = "${var.ami_prefix}-${local.timestamp}"
   instance_type = "t2.micro"
-  region        = "us-east-1"
+  region        = "ap-south-1"
   encrypt_boot  = true # encrypt the AMI snapshot at build time
+  ami_regions   = ["ap-south-1"] # copy to deployment region
   source_ami_filter {
     most_recent = true
 

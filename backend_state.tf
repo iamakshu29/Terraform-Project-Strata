@@ -2,10 +2,6 @@
 #   2. Add S3 bucket in provider.tf and fill in the bucket name from the output below.
 #   3. Run `terraform init -migrate-state` to move local state into S3.
 
-locals {
-  state_bucket_name = "strata-tfstate-${data.aws_caller_identity.current.account_id}"
-}
-
 resource "aws_s3_bucket" "strata_state" {
   bucket = local.state_bucket_name
 
