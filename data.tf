@@ -11,11 +11,12 @@ data "aws_caller_identity" "current" {}
 data "aws_ami" "ubuntu" {
   most_recent = true
 
-  owners = ["099720109477"] # Canonical
+  # Use the Packer-baked AMI (Redis pre-installed) owned by this account
+  owners = [data.aws_caller_identity.current.account_id]
 
   filter {
     name   = "name"
-    values = ["ubuntu/images/hvm-ssd*/ubuntu-jammy-22.04-amd64-server-*"]
+    values = ["learn-packer-linux-aws-redis-*"]
   }
 
   filter {
