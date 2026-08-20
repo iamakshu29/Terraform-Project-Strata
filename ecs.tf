@@ -1,7 +1,3 @@
-
-# execution_role_arn = "" and task_role_arn = "" — empty strings, need actual IAM role references
-# network_configuration subnets and security_groups are empty []
-
 # EFS
 resource "aws_efs_file_system" "strata_efs" {
   for_each       = var.efs
