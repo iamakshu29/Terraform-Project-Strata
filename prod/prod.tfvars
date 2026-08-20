@@ -5,57 +5,57 @@ domain_name = "strata.example.com"
 env_tag = "dev"
 
 vpc = {
-  cidr = "10.0.0.0/16"
+  cidr = "10.2.0.0/16"
 }
 
 # Subnet Types
 public_subnets = {
   "ap-south-1a" = {
-    cidr = "10.0.1.0/24"
+    cidr = "10.2.1.0/24"
     az   = "ap-south-1a"
   }
 
   "ap-south-1b" = {
-    cidr = "10.0.2.0/24"
+    cidr = "10.2.2.0/24"
     az   = "ap-south-1b"
   }
 
   "ap-south-1c" = {
-    cidr = "10.0.3.0/24"
+    cidr = "10.2.3.0/24"
     az   = "ap-south-1c"
   }
 }
 
 private_subnets = {
   "ap-south-1a" = {
-    cidr = "10.0.11.0/24"
+    cidr = "10.2.11.0/24"
     az   = "ap-south-1a"
   }
 
   "ap-south-1b" = {
-    cidr = "10.0.15.0/24"
+    cidr = "10.2.15.0/24"
     az   = "ap-south-1b"
   }
 
   "ap-south-1c" = {
-    cidr = "10.0.19.0/24"
+    cidr = "10.2.19.0/24"
     az   = "ap-south-1c"
   }
 }
 
 data_subnets = {
   "ap-south-1a" = {
-    cidr = "10.0.101.0/24"
+    cidr = "10.2.101.0/24"
     az   = "ap-south-1a"
   }
 
   "ap-south-1b" = {
-    cidr = "10.0.102.0/24"
+    cidr = "10.2.102.0/24"
     az   = "ap-south-1b"
   }
 
   "ap-south-1c" = {
-    cidr = "10.0.103.0/24"
+    cidr = "10.2.103.0/24"
     az   = "ap-south-1c"
   }
 }
@@ -299,20 +299,20 @@ target_group = {
 # ---------------------------------------------------------
 
 rds = {
-  allocated_storage          = 50
-  auto_minor_version_upgrade = false # Custom for SQL Server does not support minor version upgrades
+  allocated_storage          = 30
+  auto_minor_version_upgrade = true # Custom for SQL Server does not support minor version upgrades
   backup_retention_period    = 7
-  identifier                 = "strata-db"
-  multi_az                   = true
+  identifier                 = "strata-dev-db"
+  multi_az                   = false
   publicly_accessible        = false
-  deletion_protection        = true
+  deletion_protection        = false
   storage_encrypted          = true
-  skip_final_snapshot        = false # true for Prod only
+  skip_final_snapshot        = true # false for Prod only
   apply_immediately          = false
   engine_version             = "16.2"
   instance_class             = "db.t3.medium" # "db.t3.medium" for dev, "db.r6g.large" minimum for prod
   engine                     = "postgres"
-  db_name                    = "testDB"
+  db_name                    = "devDB"
 }
 
 kms_key = {
@@ -354,10 +354,6 @@ asg = {
   desired_capacity          = 2
   delete                    = "15m"
 }
-
-# extra_tags = {
-
-# }
 
 # What can the role do
 iam_policy = {
@@ -571,11 +567,6 @@ s3 = {
   }
 }
 
-
-# ssm_paramter_store = {
-
-# }
-
 elasticache = {
   replication_group_id     = "strata-redis"
   description              = "Strata ElastiCache Redis replication group"
@@ -587,73 +578,6 @@ elasticache = {
   snapshot_retention_limit = 7
   snapshot_window          = "03:00-04:00"
   apply_immediately        = false
-}
-
-
-# change dim_key and value
-metrics = {
-  metric_1 = {
-    metric_name = "HTTPCode_ELB_5XX_Count"
-    namespace   = "AWS/ApplicationELB"
-    period      = 120
-    stat        = "Sum"
-    # for percentage --extended-statistics p99 p95 p50.
-    unit            = "Count"
-    dimension_key   = "LoadBalancer"
-    dimension_value = "lb-arn_suffix"
-    threshold       = 10
-    description     = "ALB 5XX errors"
-  }
-  metric_2 = {
-    metric_name     = "DatabaseConnections"
-    namespace       = "AWS/RDS"
-    period          = 120
-    stat            = "Average"
-    unit            = "Count"
-    dimension_key   = "DBInstanceIdentifier"
-    dimension_value = "rds_identifier"
-    threshold       = 80
-    description     = "RDS database connections"
-  }
-  metric_3 = {
-    metric_name     = "CPUUtilization"
-    namespace       = "AWS/ECS"
-    period          = 120
-    stat            = "Average"
-    unit            = "Percent"
-    dimension_key   = "ClusterName"
-    dimension_value = "ecs_cluster"
-    threshold       = 80
-    description     = "ECS cluster CPU utilization"
-  }
-  metric_4 = {
-    metric_name     = "CPUUtilization"
-    namespace       = "AWS/ECS"
-    period          = 120
-    stat            = "Average"
-    unit            = "Percent"
-    dimension_key   = "ServiceName"
-    dimension_value = "ecs_service"
-    threshold       = 80
-    description     = "ECS service CPU utilization"
-  }
-  metric_5 = {
-    metric_name     = "DatabaseMemoryUsagePercentage"
-    namespace       = "AWS/ElastiCache"
-    period          = 120
-    stat            = "Average"
-    unit            = "Count"
-    dimension_key   = "ReplicationGroupId"
-    dimension_value = "elasticache_rep_group_id"
-    threshold       = 80
-    description     = "ElastiCache Redis memory utilization"
-  }
-}
-
-cloudtrail = {
-  name                          = "strata-trail"
-  s3_key_prefix                 = "cloudtrail"
-  include_global_service_events = true
 }
 
 efs = {

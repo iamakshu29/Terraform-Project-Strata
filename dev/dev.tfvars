@@ -270,49 +270,49 @@ security_group = {
 
 # ---------------------------------------------------------
 lb = {
-  strataLB = {
+  strataDevLB = {
     internal                   = false # public-facing ALB in public subnets
     load_balancer_type         = "application"
-    enable_deletion_protection = true
+    enable_deletion_protection = false
     port                       = "443"
     protocol                   = "HTTPS"
   }
 }
 
 target_group = {
-  strataInstance = {
+  strataDevInstance = {
     port        = 8443
     protocol    = "HTTPS"
     target_type = "instance"
     type        = "forward"
-    lb_key      = "strataLB" # Matches the key in var.lb
+    lb_key      = "strataDevLB" # Matches the key in var.lb
   }
-  strataECS = {
+  strataDevECS = {
     port        = 8442
     protocol    = "HTTPS"
     target_type = "ip"
     type        = "forward"
-    lb_key      = "strataLB" # Matches the key in var.lb
+    lb_key      = "strataDevLB" # Matches the key in var.lb
   }
 }
 
 # ---------------------------------------------------------
 
 rds = {
-  allocated_storage          = 50
-  auto_minor_version_upgrade = false # Custom for SQL Server does not support minor version upgrades
+  allocated_storage          = 30
+  auto_minor_version_upgrade = true # Custom for SQL Server does not support minor version upgrades
   backup_retention_period    = 7
-  identifier                 = "strata-db"
-  multi_az                   = true
+  identifier                 = "strata-dev-db"
+  multi_az                   = false
   publicly_accessible        = false
-  deletion_protection        = true
+  deletion_protection        = false
   storage_encrypted          = true
-  skip_final_snapshot        = false # true for Prod only
+  skip_final_snapshot        = true # false for Prod only
   apply_immediately          = false
   engine_version             = "16.2"
   instance_class             = "db.t3.medium" # "db.t3.medium" for dev, "db.r6g.large" minimum for prod
   engine                     = "postgres"
-  db_name                    = "testDB"
+  db_name                    = "devDB"
 }
 
 kms_key = {
@@ -355,13 +355,9 @@ asg = {
   delete                    = "15m"
 }
 
-# extra_tags = {
-
-# }
-
 # What can the role do
 iam_policy = {
-  "role_ecs_task_execution" = {
+  "dev_role_ecs_task_execution" = {
     "s3_read_write" = {
       sid    = "S3ReadWrite"
       effect = "Allow"
@@ -402,7 +398,7 @@ iam_policy = {
       resources = ["*"]
     }
   }
-  role_ec2_instance = {
+  dev_role_ec2_instance = {
     "read_cloudwatch_logs" = {
       sid       = "ReadLogs"
       effect    = "Allow"
@@ -437,7 +433,7 @@ iam_policy = {
       resources = ["*"]
     }
   }
-  role_ecs_task = {
+  dev_role_ecs_task = {
     "s3_read_write" = {
       sid    = "S3ReadWrite"
       effect = "Allow"
@@ -478,7 +474,7 @@ iam_policy = {
       resources = ["*"]
     }
   }
-  role_vpc_flow_log = {
+  dev_role_vpc_flow_log = {
     "manage_vpc_glow_log" = {
       sid    = "VPCLogAcess"
       effect = "Allow"
@@ -492,12 +488,11 @@ iam_policy = {
       resources = ["*"]
     }
   }
-
 }
 
 # who can use the role 
 assume_role_policy = {
-  role_ec2_instance = {
+  dev_role_ec2_instance = {
     Version           = "2012-10-17"
     Action            = "sts:AssumeRole"
     Effect            = "Allow"
@@ -511,14 +506,14 @@ assume_role_policy = {
     Sid               = ""
     Principal_Service = "ecs-tasks.amazonaws.com"
   }
-  role_ecs_task = {
+  dev_role_ecs_task = {
     Version           = "2012-10-17"
     Action            = "sts:AssumeRole"
     Effect            = "Allow"
     Sid               = ""
     Principal_Service = "ecs-tasks.amazonaws.com"
   }
-  role_vpc_flow_log = {
+  dev_role_vpc_flow_log = {
     Version           = "2012-10-17"
     Action            = "sts:AssumeRole"
     Effect            = "Allow"
@@ -528,10 +523,10 @@ assume_role_policy = {
 }
 
 role_names = {
-  ec2_role_key          = "role_ec2_instance"
-  ecs_role_key          = "role_ecs_task_execution"
-  ecs_task_role_key     = "role_ecs_task"
-  vpc_flow_log_role_key = "role_vpc_flow_log"
+  ec2_role_key          = "dev_role_ec2_instance"
+  ecs_role_key          = "dev_role_ecs_task_execution"
+  ecs_task_role_key     = "dev_role_ecs_task"
+  vpc_flow_log_role_key = "dev_role_vpc_flow_log"
 }
 
 cloudwatch = {
@@ -539,7 +534,7 @@ cloudwatch = {
 }
 
 s3 = {
-  strata_bucket = {
+  dev_strata_bucket = {
     block_public_acls              = true
     block_public_policy            = true
     ignore_public_acls             = true
@@ -554,7 +549,7 @@ s3 = {
     delete_data_after              = 365
     logging                        = false
   }
-  strata_logging_bucket = {
+  dev_strata_logging_bucket = {
     block_public_acls              = true
     block_public_policy            = true
     ignore_public_acls             = true
@@ -571,11 +566,6 @@ s3 = {
   }
 }
 
-
-# ssm_paramter_store = {
-
-# }
-
 elasticache = {
   replication_group_id     = "strata-redis"
   description              = "Strata ElastiCache Redis replication group"
@@ -587,73 +577,6 @@ elasticache = {
   snapshot_retention_limit = 7
   snapshot_window          = "03:00-04:00"
   apply_immediately        = false
-}
-
-
-# change dim_key and value
-metrics = {
-  metric_1 = {
-    metric_name = "HTTPCode_ELB_5XX_Count"
-    namespace   = "AWS/ApplicationELB"
-    period      = 120
-    stat        = "Sum"
-    # for percentage --extended-statistics p99 p95 p50.
-    unit            = "Count"
-    dimension_key   = "LoadBalancer"
-    dimension_value = "lb-arn_suffix"
-    threshold       = 10
-    description     = "ALB 5XX errors"
-  }
-  metric_2 = {
-    metric_name     = "DatabaseConnections"
-    namespace       = "AWS/RDS"
-    period          = 120
-    stat            = "Average"
-    unit            = "Count"
-    dimension_key   = "DBInstanceIdentifier"
-    dimension_value = "rds_identifier"
-    threshold       = 80
-    description     = "RDS database connections"
-  }
-  metric_3 = {
-    metric_name     = "CPUUtilization"
-    namespace       = "AWS/ECS"
-    period          = 120
-    stat            = "Average"
-    unit            = "Percent"
-    dimension_key   = "ClusterName"
-    dimension_value = "ecs_cluster"
-    threshold       = 80
-    description     = "ECS cluster CPU utilization"
-  }
-  metric_4 = {
-    metric_name     = "CPUUtilization"
-    namespace       = "AWS/ECS"
-    period          = 120
-    stat            = "Average"
-    unit            = "Percent"
-    dimension_key   = "ServiceName"
-    dimension_value = "ecs_service"
-    threshold       = 80
-    description     = "ECS service CPU utilization"
-  }
-  metric_5 = {
-    metric_name     = "DatabaseMemoryUsagePercentage"
-    namespace       = "AWS/ElastiCache"
-    period          = 120
-    stat            = "Average"
-    unit            = "Count"
-    dimension_key   = "ReplicationGroupId"
-    dimension_value = "elasticache_rep_group_id"
-    threshold       = 80
-    description     = "ElastiCache Redis memory utilization"
-  }
-}
-
-cloudtrail = {
-  name                          = "strata-trail"
-  s3_key_prefix                 = "cloudtrail"
-  include_global_service_events = true
 }
 
 efs = {
