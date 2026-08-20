@@ -2,7 +2,7 @@
 resource "aws_secretsmanager_secret" "strata_db_secret" {
   description = "Production database credentials for Strata server"
   name        = "starta_secrets_manager"
-  kms_key_id  = aws_kms_key.strata.id
+  kms_key_id  = aws_kms_key.strata.arn
 
   tags = merge({ Name = "strata-db-secret" }, local.tags)
 }

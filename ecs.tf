@@ -3,7 +3,7 @@ resource "aws_efs_file_system" "strata_efs" {
   for_each       = var.efs
   creation_token = each.value.creation_token
   encrypted      = each.value.encrypted
-  kms_key_id     = aws_kms_key.strata.id
+  kms_key_id     = aws_kms_key.strata.arn
 
   lifecycle_policy {
     transition_to_ia = each.value.transition_to_ia
