@@ -56,17 +56,6 @@ data "aws_iam_policy_document" "strata_logging_bucket_policy" {
   }
 
   statement {
-    sid    = "ALBLogDeliveryAclCheck"
-    effect = "Allow"
-    principals {
-      type        = "Service"
-      identifiers = ["delivery.logs.amazonaws.com"]
-    }
-    actions   = ["s3:GetBucketAcl"]
-    resources = [aws_s3_bucket.strata_bucket["strata-logging-bucket"].arn]
-  }
-
-  statement {
     sid    = "ALBLogDelivery"
     effect = "Allow"
     principals {
@@ -77,8 +66,8 @@ data "aws_iam_policy_document" "strata_logging_bucket_policy" {
     resources = ["${aws_s3_bucket.strata_bucket["strata-logging-bucket"].arn}/alb-logs/*"]
     condition {
       test     = "StringEquals"
-      variable = "s3:x-amz-acl"
-      values   = ["bucket-owner-full-control"]
+      variable = "aws:SourceAccount"
+      values   = [data.aws_caller_identity.current.account_id]
     }
   }
 }
