@@ -16,4 +16,4 @@ resource "aws_secretsmanager_secret_version" "strata_db_secret_val" {
 }
 
 # Command
-# aws secretsmanager delete-secret --region ap-south-1 --secret-id starta_secrets_manager s--force-delete-without-recovery
+# aws secretsmanager delete-secret --region ap-south-1 --secret-id starta_secrets_manager --force-delete-without-recovery
