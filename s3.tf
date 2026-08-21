@@ -1,7 +1,8 @@
 resource "aws_s3_bucket" "strata_bucket" {
   for_each = var.s3
 
-  bucket = each.key
+  # account ID suffix ensures global uniqueness across all AWS accounts
+  bucket = "${each.key}-${data.aws_caller_identity.current.account_id}"
 
   tags = merge({ Name = each.key }, local.tags)
 }

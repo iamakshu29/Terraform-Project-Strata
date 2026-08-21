@@ -15,6 +15,8 @@ resource "aws_lb" "strata" {
     enabled = true
   }
 
+  depends_on = [aws_s3_bucket_policy.strata_logging_bucket]
+
   tags = merge({ Name = each.key }, local.tags)
 }
 
@@ -48,7 +50,8 @@ resource "aws_lb_listener" "strata_https" {
   port              = each.value.port
   protocol          = each.value.protocol
   ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
-  certificate_arn   = aws_acm_certificate_validation.strata.certificate_arn
+  # certificate_arn   = aws_acm_certificate_validation.strata.certificate_arn # With Validation resource present in acm.tf
+  certificate_arn   = aws_acm_certificate.strata.arn # Without validation resource in acm.tf
 
   default_action {
     type             = each.value.type

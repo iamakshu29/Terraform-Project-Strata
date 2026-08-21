@@ -21,7 +21,7 @@ data "aws_iam_policy_document" "policy" {
 # Create IAM policy, for allowing an EC2 instance, ECS task, or an application to read the secret credentials
 resource "aws_iam_policy" "strata_policy" {
   for_each = local.policies
-  name     = "strata-${each.value.policy_name}"
+  name     = "strata-${each.key}"
   policy   = data.aws_iam_policy_document.policy[each.key].json # need to check this
 }
 
