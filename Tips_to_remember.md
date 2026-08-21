@@ -254,3 +254,7 @@ Create and Save the Plan
 │ on alb.tf line 1, in resource "aws_lb" "strata":
 │ 1: resource "aws_lb" "strata" {
 │
+
+---
+
+- I dont want the cloud-trail logs to be in strata-logging-bucket-account-id
