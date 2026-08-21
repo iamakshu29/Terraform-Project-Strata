@@ -57,15 +57,15 @@ resource "aws_s3_bucket_lifecycle_configuration" "strata_s3_lifecycle_config" {
   }
 }
 
-# S3 SSE-encryption with KMS block
+# S3 SSE-encryption (AES256 for logging bucket so ALB can deliver logs, KMS for application buckets)
 resource "aws_s3_bucket_server_side_encryption_configuration" "strata_bucket_encryption" {
   for_each = var.s3
   bucket   = aws_s3_bucket.strata_bucket[each.key].id
 
   rule {
     apply_server_side_encryption_by_default {
-      kms_master_key_id = aws_kms_key.strata.arn
-      sse_algorithm     = "aws:kms"
+      kms_master_key_id = each.value.logging ? null : aws_kms_key.strata.arn
+      sse_algorithm     = each.value.logging ? "AES256" : "aws:kms"
     }
   }
 }
