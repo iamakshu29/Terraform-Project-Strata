@@ -247,82 +247,10 @@ Create and Save the Plan
   > > terraform apply tfplan
 
 ==========================================================================================
-╷
-│ Error: waiting for ACM Certificate (arn:aws:acm:ap-south-1:025066281843:certificate/9c0667c6-de50-4c66-80b4-2c1b34fcb30f) to be issued: context canceled
-│
-│ with aws_acm_certificate_validation.strata,
-│ on acm.tf line 15, in resource "aws_acm_certificate_validation" "strata":
-│ 15: resource "aws_acm_certificate_validation" "strata" {
-│
-╵
-╷
-│ Error: modifying ELBv2 Load Balancer (arn:aws:elasticloadbalancing:ap-south-1:025066281843:loadbalancer/app/strataLB/2248fa943a0f6f36) attributes: operation error Elastic Load Balancing v2: ModifyLoadBalancerAttributes, https response error StatusCode: 400, RequestID: 2e70d022-12c1-486e-9033-7f79bb7af664, InvalidConfigurationRequest: Access Denied for bucket: strata-logging-bucket. Please check S3bucket permission
+
+│ Error: modifying ELBv2 Load Balancer (arn:aws:elasticloadbalancing:ap-south-1:025066281843:loadbalancer/app/strataLB/65234dfdec550371) attributes: operation error Elastic Load Balancing v2: ModifyLoadBalancerAttributes, https response error StatusCode: 400, RequestID: 7fa6bb85-c185-4a1e-9d46-c8b72a1da439, InvalidConfigurationRequest: Access Denied for bucket: strata-logging-bucket-025066281843. Please check S3bucket permission
 │
 │ with aws_lb.strata["strataLB"],
 │ on alb.tf line 1, in resource "aws_lb" "strata":
 │ 1: resource "aws_lb" "strata" {
-│
-╵
-╷
-│ Error: creating IAM Policy (strata-read_secrets): operation error IAM: CreatePolicy, https response error StatusCode: 409, RequestID: 3b10d217-2a3e-4bca-911f-319d79541b29, EntityAlreadyExists: A policy called strata-read_secrets already exists. Duplicate names are not allowed.
-│
-│ with aws_iam_policy.strata_policy["role_ecs_task_execution-read_secrets"],
-│ on iam_role_and_policy.tf line 22, in resource "aws_iam_policy" "strata_policy":
-│ 22: resource "aws_iam_policy" "strata_policy" {
-│
-╵
-╷
-│ Error: creating IAM Policy (strata-rds_access-rw): operation error IAM: CreatePolicy, https response error StatusCode: 409, RequestID: 7a9c569e-6835-4798-8c80-f9ac1d535ea2, EntityAlreadyExists: A policy called strata-rds_access-rw already exists. Duplicate names are not allowed.
-│
-│ with aws_iam_policy.strata_policy["role_ecs_task_execution-rds_access-rw"],
-│ on iam_role_and_policy.tf line 22, in resource "aws_iam_policy" "strata_policy":
-│ 22: resource "aws_iam_policy" "strata_policy" {
-│
-╵
-╷
-│ Error: creating IAM Policy (strata-read_secrets): operation error IAM: CreatePolicy, https response error StatusCode: 409, RequestID: 557fc366-0759-4257-89ea-7cc31d31beae, EntityAlreadyExists: A policy called strata-read_secrets already exists. Duplicate names are not allowed.
-│
-│ with aws_iam_policy.strata_policy["role_ecs_task-read_secrets"],
-│ on iam_role_and_policy.tf line 22, in resource "aws_iam_policy" "strata_policy":
-│ 22: resource "aws_iam_policy" "strata_policy" {
-│
-╵
-╷
-│ Error: creating IAM Policy (strata-s3_read_write): operation error IAM: CreatePolicy, https response error StatusCode: 409, RequestID: 8c75e9aa-7f82-406b-9a7d-29382df3701a, EntityAlreadyExists: A policy called strata-s3_read_write already exists. Duplicate names are not allowed.
-│
-│ with aws_iam_policy.strata_policy["role_ecs_task-s3_read_write"],
-│ on iam_role_and_policy.tf line 22, in resource "aws_iam_policy" "strata_policy":
-│ 22: resource "aws_iam_policy" "strata_policy" {
-│
-╵
-╷
-│ Error: creating IAM Policy (strata-s3_read_write): operation error IAM: CreatePolicy, https response error StatusCode: 409, RequestID: a899a8e0-26a6-45e3-8fb6-b9f407447292, EntityAlreadyExists: A policy called strata-s3_read_write already exists. Duplicate names are not allowed.
-│
-│ with aws_iam_policy.strata_policy["role_ec2_instance-s3_read_write"],
-│ on iam_role_and_policy.tf line 22, in resource "aws_iam_policy" "strata_policy":
-│ 22: resource "aws_iam_policy" "strata_policy" {
-│
-╵
-╷
-│ Error: creating IAM Policy (strata-read_cloudwatch_logs): operation error IAM: CreatePolicy, https response error StatusCode: 409, RequestID: 4e5201da-f44c-4725-94ff-d9139b616e10, EntityAlreadyExists: A policy called strata-read_cloudwatch_logs already exists. Duplicate names are not allowed.
-│
-│ with aws_iam_policy.strata_policy["role_ec2_instance-read_cloudwatch_logs"],
-│ on iam_role_and_policy.tf line 22, in resource "aws_iam_policy" "strata_policy":
-│ 22: resource "aws_iam_policy" "strata_policy" {
-│
-╵
-╷
-│ Error: creating S3 Bucket (strata-bucket): operation error S3: CreateBucket, https response error StatusCode: 409, RequestID: DZMX4RX99B52NN54, HostID: TOOpTfwjdUNtRuOB7WrtqbzMABn4EUyMMs++ZzPNrCvVcAQI2JVQf2XEGknkUMprYHuyCcZ/eAU=, BucketAlreadyExists: The requested bucket name is not available. The bucket namespace is shared by all users of the system. Please select a different name and try again.
-│
-│ with aws_s3_bucket.strata_bucket["strata-bucket"],
-│ on s3.tf line 1, in resource "aws_s3_bucket" "strata_bucket":
-│ 1: resource "aws_s3_bucket" "strata_bucket" {
-│
-╵
-╷
-│ Error: creating Secrets Manager Secret (starta_secrets_manager): operation error Secrets Manager: CreateSecret, https response error StatusCode: 400, RequestID: 1a6e9a44-18d1-4819-b7bb-809aa060ec92, InvalidRequestException: You can't create this secret because a secret with this name is already scheduled for deletion.
-│
-│ with aws_secretsmanager_secret.strata_db_secret,
-│ on secrets_manager.tf line 2, in resource "aws_secretsmanager_secret" "strata_db_secret":
-│ 2: resource "aws_secretsmanager_secret" "strata_db_secret" {
 │

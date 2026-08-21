@@ -43,11 +43,7 @@ data "aws_iam_policy_document" "strata_logging_bucket_policy" {
     }
     actions   = ["s3:PutObject"]
     resources = ["${aws_s3_bucket.strata_bucket["strata-logging-bucket"].arn}/${var.cloudtrail.s3_key_prefix}/AWSLogs/${data.aws_caller_identity.current.account_id}/*"]
-    condition {
-      test     = "StringEquals"
-      variable = "s3:x-amz-acl"
-      values   = ["bucket-owner-full-control"]
-    }
+    # s3:x-amz-acl condition removed — ACLs disabled under BucketOwnerEnforced (AWS default since Apr 2023)
     condition {
       test     = "StringEquals"
       variable = "aws:SourceArn"
@@ -55,15 +51,16 @@ data "aws_iam_policy_document" "strata_logging_bucket_policy" {
     }
   }
 
+  # ALBLogDeliveryAclCheck removed — s3:GetBucketAcl fails under BucketOwnerEnforced
   statement {
-    sid    = "ALBLogDelivery"
+    sid    = "ALBLogDeliveryWrite"
     effect = "Allow"
     principals {
       type        = "Service"
       identifiers = ["delivery.logs.amazonaws.com"]
     }
     actions   = ["s3:PutObject"]
-    resources = ["${aws_s3_bucket.strata_bucket["strata-logging-bucket"].arn}/alb-logs/*"]
+    resources = ["${aws_s3_bucket.strata_bucket["strata-logging-bucket"].arn}/alb-logs/AWSLogs/${data.aws_caller_identity.current.account_id}/*"]
     condition {
       test     = "StringEquals"
       variable = "aws:SourceAccount"
