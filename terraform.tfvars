@@ -336,7 +336,7 @@ aws_bastian_instance = {
 }
 
 launch_template = {
-  instance_type               = "t3.large"
+  instance_type               = "t2.micro"
   subnet_az                   = "ap-south-1b"
   subnet_type                 = "private"
   associate_public_ip_address = false

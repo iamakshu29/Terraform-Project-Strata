@@ -25,7 +25,7 @@ echo "-------------------------------------------------------"
 # VPC
 VPC_STATE=$(aws ec2 describe-vpcs \
   --region "$REGION" \
-  --filters "Name=tag:Project,Values=strata" \
+  --filters "Name=tag:Project,Values=Strata" \
   --query "Vpcs[0].State" --output text 2>/dev/null)
 [[ "$VPC_STATE" == "available" ]] \
   && pass "VPC — available" \
