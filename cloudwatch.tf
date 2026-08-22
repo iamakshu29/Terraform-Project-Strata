@@ -56,11 +56,17 @@ resource "aws_cloudwatch_dashboard" "strata" {
         properties = {
           title  = "ALB — Request Count & 5XX Errors"
           period = 300
+          region = "ap-south-1"
           stat   = "Sum"
           metrics = [
             ["AWS/ApplicationELB", "RequestCount", "LoadBalancer", local.dimension_value_to_arn["lb-arn_suffix"]],
             ["AWS/ApplicationELB", "HTTPCode_ELB_5XX_Count", "LoadBalancer", local.dimension_value_to_arn["lb-arn_suffix"]],
           ]
+          annotations = {
+            alarms = [
+              aws_cloudwatch_metric_alarm.strata_metric_alarm_cw["metric_1"].arn
+            ]
+          }
         }
       },
       {
@@ -70,10 +76,16 @@ resource "aws_cloudwatch_dashboard" "strata" {
         properties = {
           title  = "ALB — Target Response Time (p99)"
           period = 300
+          region = "ap-south-1"
           stat   = "p99"
           metrics = [
             ["AWS/ApplicationELB", "TargetResponseTime", "LoadBalancer", local.dimension_value_to_arn["lb-arn_suffix"]],
           ]
+          annotations = {
+            alarms = [
+              aws_cloudwatch_metric_alarm.strata_metric_alarm_cw["metric_1"].arn
+            ]
+          }
         }
       },
       {
@@ -83,11 +95,17 @@ resource "aws_cloudwatch_dashboard" "strata" {
         properties = {
           title  = "RDS — CPU & Connections"
           period = 300
+          region = "ap-south-1"
           stat   = "Average"
           metrics = [
             ["AWS/RDS", "CPUUtilization", "DBInstanceIdentifier", local.dimension_value_to_arn["rds_identifier"]],
             ["AWS/RDS", "DatabaseConnections", "DBInstanceIdentifier", local.dimension_value_to_arn["rds_identifier"]]
           ]
+          annotations = {
+            alarms = [
+              aws_cloudwatch_metric_alarm.strata_metric_alarm_cw["metric_2"].arn
+            ]
+          }
         }
       },
       {
@@ -97,11 +115,17 @@ resource "aws_cloudwatch_dashboard" "strata" {
         properties = {
           title  = "ElastiCache Redis — Memory & Connections"
           period = 300
+          region = "ap-south-1"
           stat   = "Average"
           metrics = [
             ["AWS/ElastiCache", "DatabaseMemoryUsagePercentage", "ReplicationGroupId", local.dimension_value_to_arn["elasticache_rep_group_id"]],
             ["AWS/ElastiCache", "CurrConnections", "ReplicationGroupId", local.dimension_value_to_arn["elasticache_rep_group_id"]]
           ]
+          annotations = {
+            alarms = [
+              aws_cloudwatch_metric_alarm.strata_metric_alarm_cw["metric_5"].arn
+            ]
+          }
         }
       },
       {
@@ -111,11 +135,18 @@ resource "aws_cloudwatch_dashboard" "strata" {
         properties = {
           title  = "ECS — CPU & Memory Utilization"
           period = 300
+          region = "ap-south-1"
           stat   = "Average"
           metrics = [
             ["AWS/ECS", "CPUUtilization", "ClusterName", local.dimension_value_to_arn["ecs_cluster"], "ServiceName", local.dimension_value_to_arn["ecs_service"]],
             ["AWS/ECS", "MemoryUtilization", "ClusterName", local.dimension_value_to_arn["ecs_cluster"], "ServiceName", local.dimension_value_to_arn["ecs_service"]]
           ]
+          annotations = {
+            alarms = [
+              aws_cloudwatch_metric_alarm.strata_metric_alarm_cw["metric_3"].arn,
+              aws_cloudwatch_metric_alarm.strata_metric_alarm_cw["metric_4"].arn
+            ]
+          }
         }
       },
       {
@@ -125,10 +156,16 @@ resource "aws_cloudwatch_dashboard" "strata" {
         properties = {
           title  = "ALB Target Group — Healthy Host Count"
           period = 300
+          region = "ap-south-1"
           stat   = "Average"
           metrics = [
             ["AWS/ApplicationELB", "HealthyHostCount", "TargetGroup", local.dimension_value_to_arn["lb-target_group"], "LoadBalancer", local.dimension_value_to_arn["lb-arn_suffix"]]
           ]
+          annotations = {
+            alarms = [
+              aws_cloudwatch_metric_alarm.strata_metric_alarm_cw["metric_1"].arn
+            ]
+          }
         }
       },
     ]

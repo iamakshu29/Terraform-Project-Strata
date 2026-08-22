@@ -47,12 +47,10 @@ resource "aws_lb_listener" "strata_https" {
   for_each = var.target_group
 
   load_balancer_arn = aws_lb.strata[each.value.lb_key].arn
-  port              = each.value.port
-  protocol          = each.value.protocol
+  port              = each.value.certficate_provided ? 443 : 80
+  protocol          = each.value.certficate_provided ? "HTTPS" : "HTTP"
   ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
-  # certificate_arn   = aws_acm_certificate_validation.strata.certificate_arn # With Validation resource present in acm.tf
-  certificate_arn   = aws_acm_certificate.strata.arn # Without validation resource in acm.tf
-
+  certificate_arn   = each.value.certficate_provided ? aws_acm_certificate_validation.strata.certificate_arn : null
   default_action {
     type             = each.value.type
     target_group_arn = aws_lb_target_group.strata[each.key].arn
@@ -60,18 +58,19 @@ resource "aws_lb_listener" "strata_https" {
 }
 
 # HTTP listener — redirects all port-80 traffic to HTTPS on the same port
-resource "aws_lb_listener" "strata_http_redirect" {
-  load_balancer_arn = aws_lb.strata["strataLB"].arn
-  port              = "80"
-  protocol          = "HTTP"
+## NOTE - uncomment when you have a valid certificate else both listeners will have a port-conflict.
+# resource "aws_lb_listener" "strata_http_redirect" {
+#   load_balancer_arn = aws_lb.strata["strataLB"].arn
+#   port              = "80"
+#   protocol          = "HTTP"
 
-  default_action {
-    type = "redirect"
+#   default_action {
+#     type = "redirect"
 
-    redirect {
-      port        = "443"
-      protocol    = "HTTPS"
-      status_code = "HTTP_301"
-    }
-  }
-}
+#     redirect {
+#       port        = "443"
+#       protocol    = "HTTPS"
+#       status_code = "HTTP_301"
+#     }
+#   }
+# }

@@ -65,6 +65,17 @@ resource "aws_ecs_task_definition" "service" {
           hostPort      = c.hostPort
         }
       ]
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          # 1. This is the missing line causing your error
+          "awslogs-region"        = "ap-south-1" # Match your AWS region
+          
+          "awslogs-group"         = "/ecs/${c.name}"
+          "awslogs-stream-prefix" = "ecs"
+        }
+      }
+
     }
   ])
 

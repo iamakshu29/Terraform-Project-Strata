@@ -276,6 +276,7 @@ lb = {
     enable_deletion_protection = false
     port                       = "443"
     protocol                   = "HTTPS"
+    certficate_provided = false
   }
 }
 

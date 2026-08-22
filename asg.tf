@@ -79,4 +79,8 @@ resource "aws_autoscaling_policy" "strata_target_tracking" {
     # Scale out when avg request count per instance exceeds 1000 req/min
     target_value = 1000.0
   }
+
+  depends_on = [
+    aws_lb_listener.strata_https
+  ]
 }
