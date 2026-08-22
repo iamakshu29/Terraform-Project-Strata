@@ -2,6 +2,7 @@
 # Covers three writers: S3 server access logging, CloudTrail, and ALB access logs.
 # Only one aws_s3_bucket_policy is allowed per bucket — multiple resources would silently overwrite each other.
 data "aws_iam_policy_document" "strata_logging_bucket_policy" {
+  # S3 server access logging
   statement {
     sid    = "AWSS3Logging"
     effect = "Allow"
@@ -18,6 +19,7 @@ data "aws_iam_policy_document" "strata_logging_bucket_policy" {
     }
   }
 
+  # CloudTrail ACL check
   statement {
     sid    = "AWSCloudTrailAclCheck"
     effect = "Allow"
@@ -34,6 +36,7 @@ data "aws_iam_policy_document" "strata_logging_bucket_policy" {
     }
   }
 
+  # CloudTrail writes
   statement {
     sid    = "AWSCloudTrailWrite"
     effect = "Allow"
@@ -43,7 +46,6 @@ data "aws_iam_policy_document" "strata_logging_bucket_policy" {
     }
     actions   = ["s3:PutObject"]
     resources = ["${aws_s3_bucket.strata_bucket["strata-logging-bucket"].arn}/${var.cloudtrail.s3_key_prefix}/AWSLogs/${data.aws_caller_identity.current.account_id}/*"]
-    # s3:x-amz-acl condition removed — ACLs disabled under BucketOwnerEnforced (AWS default since Apr 2023)
     condition {
       test     = "StringEquals"
       variable = "aws:SourceArn"
@@ -51,7 +53,39 @@ data "aws_iam_policy_document" "strata_logging_bucket_policy" {
     }
   }
 
-  # ALBLogDeliveryAclCheck removed — s3:GetBucketAcl fails under BucketOwnerEnforced
+  # ALB log delivery (Standard AWS ELB Account for ap-south-1)
+  statement {
+    sid    = "AWSConsole-AccessLogs-Custom-Bucket"
+    effect = "Allow"
+    principals {
+      type        = "AWS"
+      identifiers = [data.aws_elb_service_account.main.arn]
+    }
+    actions   = ["s3:PutObject"]
+    resources = ["${aws_s3_bucket.strata_bucket["strata-logging-bucket"].arn}/alb-logs/AWSLogs/${data.aws_caller_identity.current.account_id}/*"]
+  }
+
+  # ALB log delivery - bucket permission (Log Delivery Service)
+  statement {
+    sid    = "ALBLogDeliveryAclCheck"
+    effect = "Allow"
+
+    principals {
+      type        = "Service"
+      identifiers = ["delivery.logs.amazonaws.com"]
+    }
+
+    actions   = ["s3:GetBucketAcl"]
+    resources = [aws_s3_bucket.strata_bucket["strata-logging-bucket"].arn]
+
+    condition {
+      test     = "StringEquals"
+      variable = "aws:SourceAccount"
+      values   = [data.aws_caller_identity.current.account_id]
+    }
+  }
+
+  #  ALB log delivery - object permission
   statement {
     sid    = "ALBLogDeliveryWrite"
     effect = "Allow"
@@ -76,6 +110,7 @@ resource "aws_s3_bucket_policy" "strata_logging_bucket" {
 }
 
 # Only configure access logging for non-logging buckets to avoid a circular loop.
+# It will select the buckets which have logging = false
 resource "aws_s3_bucket_logging" "strata_logging_config" {
   for_each = { for k, v in var.s3 : k => v if !v.logging }
 
