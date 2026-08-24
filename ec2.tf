@@ -13,6 +13,8 @@ resource "aws_instance" "strata_server" {
     volume_type           = "gp3"
     volume_size           = var.aws_bastian_instance.volume_size
     delete_on_termination = true
+    encrypted             = true
+    kms_key_id            = aws_kms_key.strata.arn
   }
 
   tags = merge({ Name = "strata-bastion" }, local.tags)

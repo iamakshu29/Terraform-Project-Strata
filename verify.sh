@@ -263,7 +263,7 @@ echo ""
 echo "[ Storage ]"
 
 for BUCKET in "strata-bucket-${ACCOUNT_ID}" "strata-logging-bucket-${ACCOUNT_ID}" "$STATE_BUCKET"; do
-  if aws s3api head-bucket --bucket "$BUCKET" --region "$REGION" --profile "$PROFILE" 2>/dev/null; then
+  if aws s3api head-bucket --bucket "$BUCKET" --region "$REGION" --profile "$PROFILE" >/dev/null 2>&1; then
     pass "S3 bucket ($BUCKET) — exists"
   else
     fail "S3 bucket ($BUCKET)" "not found or no access"

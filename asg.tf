@@ -29,6 +29,18 @@ resource "aws_launch_template" "strata" {
     }
   }
 
+  # Installs Nginx on port 8080 with /health for ALB health checks
+  user_data = base64encode(<<-EOF
+    #!/bin/bash
+    apt-get update -y
+    apt-get install -y nginx
+    sed -i 's/listen 80 default_server/listen 8080 default_server/' /etc/nginx/sites-available/default
+    sed -i 's/listen \[\:\:\]:80 default_server/listen [::]:8080 default_server/' /etc/nginx/sites-available/default
+    sed -i '/server_name _;/a\\tlocation /health { return 200 "OK"; add_header Content-Type text/plain; }' /etc/nginx/sites-available/default
+    systemctl enable --now nginx
+  EOF
+  )
+
 }
 
 resource "aws_autoscaling_group" "strata" {

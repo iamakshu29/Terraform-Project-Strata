@@ -282,15 +282,15 @@ lb = {
 
 target_group = {
   strataInstance = {
-    port        = 8443
-    protocol    = "HTTPS"
+    port        = 8080
+    protocol    = "HTTP"
     target_type = "instance"
     type        = "forward"
     lb_key      = "strataLB" # Matches the key in var.lb
   }
   strataECS = {
-    port        = 8442
-    protocol    = "HTTPS"
+    port        = 8080
+    protocol    = "HTTP"
     target_type = "ip"
     type        = "forward"
     lb_key      = "strataLB" # Matches the key in var.lb
@@ -714,7 +714,7 @@ task_definitions = {
     tasks = {
       image_1 = {
         name          = "strata-app-1"
-        image         = "strata-image-1"
+        image         = "public.ecr.aws/nginx/nginx:latest"
         cpu           = 10
         memory        = 512
         essential     = true
@@ -725,7 +725,7 @@ task_definitions = {
       }
       image_2 = {
         name          = "strata-app-2"
-        image         = "strata-image-2"
+        image         = "public.ecr.aws/nginx/nginx:latest"
         cpu           = 10
         memory        = 256
         essential     = true
