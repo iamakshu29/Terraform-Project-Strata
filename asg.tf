@@ -67,7 +67,7 @@ resource "aws_autoscaling_group" "strata" {
   }
 
   dynamic "tag" {
-    for_each = merge({ Name = "strata-asg-instance" }, local.tags)
+    for_each = merge({ Name = "strata-asg-instance-${var.env_tag}" }, local.tags)
     content {
       key                 = tag.key
       value               = tag.value

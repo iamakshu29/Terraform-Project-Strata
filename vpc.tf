@@ -4,7 +4,7 @@ resource "aws_vpc" "strata" {
   enable_dns_hostnames = true
   enable_dns_support   = true
 
-  tags = merge({ Name = "strata-vpc" }, local.tags)
+  tags = merge({ Name = "strata-vpc-${var.env_tag}" }, local.tags)
 }
 
 # Public Subnets
@@ -16,7 +16,7 @@ resource "aws_subnet" "strata_public_subnet" {
   availability_zone = each.key
 
 
-  tags = merge({ Name = "public-${each.key}" }, local.tags)
+  tags = merge({ Name = "public-${each.key}-${var.env_tag}" }, local.tags)
 }
 
 # Private Subnets
@@ -27,7 +27,7 @@ resource "aws_subnet" "strata_private_subnet" {
   availability_zone = each.key
 
 
-  tags = merge({ Name = "private-${each.key}" }, local.tags)
+  tags = merge({ Name = "private-${each.key}-${var.env_tag}" }, local.tags)
 }
 
 # Data Subnets
@@ -38,7 +38,7 @@ resource "aws_subnet" "strata_data_subnet" {
   availability_zone = each.key
 
 
-  tags = merge({ Name = "data-${each.key}" }, local.tags)
+  tags = merge({ Name = "data-${each.key}-${var.env_tag}" }, local.tags)
 }
 
 resource "aws_db_subnet_group" "strata_db_group" {
@@ -47,14 +47,14 @@ resource "aws_db_subnet_group" "strata_db_group" {
   # Fetches the IDs of data subnets from your existing subnet map
   subnet_ids = [for s in aws_subnet.strata_data_subnet : s.id]
 
-  tags = merge({ Name = "strata-db-subnet-group" }, local.tags)
+  tags = merge({ Name = "strata-db-subnet-group-${var.env_tag}" }, local.tags)
 }
 
 # IGW
 resource "aws_internet_gateway" "strata" {
   vpc_id = aws_vpc.strata.id
 
-  tags = merge({ Name = "strata-igw" }, local.tags)
+  tags = merge({ Name = "strata-igw-${var.env_tag}" }, local.tags)
 }
 
 # EIPs
@@ -62,7 +62,7 @@ resource "aws_eip" "strata" {
   for_each = toset(var.nat_gateway_azs)
 
   domain = "vpc"
-  tags   = merge({ Name = "eip-${each.key}" }, local.tags)
+  tags   = merge({ Name = "eip-${each.key}-${var.env_tag}" }, local.tags)
 }
 
 # NAT GW
@@ -72,7 +72,7 @@ resource "aws_nat_gateway" "strata" {
   allocation_id = aws_eip.strata[each.key].id
   subnet_id     = aws_subnet.strata_public_subnet[each.key].id
 
-  tags = merge({ Name = "nat-${each.key}" }, local.tags)
+  tags = merge({ Name = "nat-${each.key}-${var.env_tag}" }, local.tags)
 
   # To ensure proper ordering, it is recommended to add an explicit dependency on the Internet Gateway for the VPC.
   depends_on = [aws_internet_gateway.strata]

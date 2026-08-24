@@ -1,61 +1,61 @@
 aws_region = "ap-south-1"
 
-domain_name = "strata.example.in"
+domain_name = "strata.example.dev"
 
 env_tag = "dev"
 
 vpc = {
-  cidr = "10.0.0.0/16"
+  cidr = "10.1.0.0/16"
 }
 
 # Subnet Types
 public_subnets = {
   "ap-south-1a" = {
-    cidr = "10.0.1.0/24"
+    cidr = "10.1.1.0/24"
     az   = "ap-south-1a"
   }
 
   "ap-south-1b" = {
-    cidr = "10.0.2.0/24"
+    cidr = "10.1.2.0/24"
     az   = "ap-south-1b"
   }
 
   "ap-south-1c" = {
-    cidr = "10.0.3.0/24"
+    cidr = "10.1.3.0/24"
     az   = "ap-south-1c"
   }
 }
 
 private_subnets = {
   "ap-south-1a" = {
-    cidr = "10.0.11.0/24"
+    cidr = "10.1.11.0/24"
     az   = "ap-south-1a"
   }
 
   "ap-south-1b" = {
-    cidr = "10.0.15.0/24"
+    cidr = "10.1.15.0/24"
     az   = "ap-south-1b"
   }
 
   "ap-south-1c" = {
-    cidr = "10.0.19.0/24"
+    cidr = "10.1.19.0/24"
     az   = "ap-south-1c"
   }
 }
 
 data_subnets = {
   "ap-south-1a" = {
-    cidr = "10.0.101.0/24"
+    cidr = "10.1.101.0/24"
     az   = "ap-south-1a"
   }
 
   "ap-south-1b" = {
-    cidr = "10.0.102.0/24"
+    cidr = "10.1.102.0/24"
     az   = "ap-south-1b"
   }
 
   "ap-south-1c" = {
-    cidr = "10.0.103.0/24"
+    cidr = "10.1.103.0/24"
     az   = "ap-south-1c"
   }
 }
@@ -304,14 +304,14 @@ rds = {
   auto_minor_version_upgrade = false # Custom for SQL Server does not support minor version upgrades
   backup_retention_period    = 7
   identifier                 = "strata-db"
-  multi_az                   = true
+  multi_az                   = false
   publicly_accessible        = false
   deletion_protection        = false
   storage_encrypted          = true
   skip_final_snapshot        = true # false for Prod only
   apply_immediately          = false
   engine_version             = "16.13"
-  instance_class             = "db.t3.medium" # "db.t3.medium" for dev, "db.r6g.large" minimum for prod
+  instance_class             = "db.t3.medium"
   engine                     = "postgres"
   db_name                    = "testDB"
 }

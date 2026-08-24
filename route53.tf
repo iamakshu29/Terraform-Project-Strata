@@ -2,7 +2,7 @@
 # After first apply, copy the name_servers output to your domain registrar's NS records.
 resource "aws_route53_zone" "strata" {
   name = var.domain_name
-  tags = merge({ Name = "strata-zone" }, local.tags)
+  tags = merge({ Name = "strata-zone-${var.env_tag}" }, local.tags)
 }
 
 # ACM DNS validation records — Route 53 creates and serves these automatically

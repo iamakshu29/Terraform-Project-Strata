@@ -17,7 +17,7 @@ resource "aws_lb" "strata" {
 
   depends_on = [aws_s3_bucket_policy.strata_logging_bucket]
 
-  tags = merge({ Name = each.key }, local.tags)
+  tags = merge({ Name = "${each.key}-${var.env_tag}" }, local.tags)
 }
 
 resource "aws_lb_target_group" "strata" {

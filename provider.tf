@@ -8,12 +8,9 @@ terraform {
     }
   }
 
-  # After running `cd bootstrap && terraform apply`, copy the state_bucket_name output here.
-  # Then run: terraform init -migrate-state
-  # use_lockfile = true enables S3 native locking (Terraform >= 1.10, no DynamoDB needed)
+  # Pass -backend-config="key=strata/dev/terraform.tfstate" (or prod) at init time
   backend "s3" {
     bucket       = "strata-tfstate-025066281843"
-    key          = "strata/dev/terraform.tfstate"
     region       = "ap-south-1"
     encrypt      = true
     use_lockfile = true
