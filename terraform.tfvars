@@ -276,7 +276,7 @@ lb = {
     enable_deletion_protection = false
     port                       = "443"
     protocol                   = "HTTPS"
-    certficate_provided = false
+    certficate_provided        = false
   }
 }
 
@@ -329,15 +329,15 @@ secrets = {
 
 # ---------------------------------------------------------
 aws_bastian_instance = {
-  instance_type               = "t2.medium"
+  instance_type               = "t2.micro"
   subnet_az                   = "ap-south-1a"
   subnet_type                 = "public"
   associate_public_ip_address = true
-  ebs_size                    = 40
+  volume_size                 = 40
 }
 
 launch_template = {
-  instance_type               = "t2.micro"
+  instance_type               = "t2.medium"
   subnet_az                   = "ap-south-1b"
   subnet_type                 = "private"
   associate_public_ip_address = false
