@@ -80,11 +80,11 @@ echo "[ Security ]"
 # KMS Key
 KMS_ID=$(aws kms describe-key \
   --profile "$PROFILE" --region "$REGION" \
-  --key-id "alias/strata-key" \
+  --key-id "alias/strata-cmk" \
   --query "KeyMetadata.KeyId" --output text 2>/dev/null || echo "")
 [[ -n "$KMS_ID" && "$KMS_ID" != "None" ]] \
-  && pass "KMS key (alias/strata-key) — $KMS_ID" \
-  || fail "KMS key" "alias/strata-key not found"
+  && pass "KMS key (alias/strata-cmk) — $KMS_ID" \
+  || fail "KMS key" "alias/strata-cmk not found"
 
 # Secrets Manager
 SECRET_ARN=$(aws secretsmanager describe-secret \
@@ -128,18 +128,18 @@ BASTION_ID=$(echo "$BASTION_JSON"   | grep -o '"Id": *"[^"]*"'    | cut -d'"' -f
   && pass "Bastion EC2 ($BASTION_ID) — running" \
   || fail "Bastion EC2" "state=${BASTION_STATE:-not found}"
 
-# ASG
+# ASG — name includes env tag suffix
 ASG_DESIRED=$(aws autoscaling describe-auto-scaling-groups \
   --profile "$PROFILE" --region "$REGION" \
-  --auto-scaling-group-names "strata-asg" \
-  --query "AutoScalingGroups[0].DesiredCapacity" --output text 2>/dev/null)
+  --auto-scaling-group-names "strata-asg-dev" \
+  --query "AutoScalingGroups[0].DesiredCapacity" --output text 2>/dev/null || echo "0")
 ASG_RUNNING=$(aws autoscaling describe-auto-scaling-groups \
   --profile "$PROFILE" --region "$REGION" \
-  --auto-scaling-group-names "strata-asg" \
-  --query "length(AutoScalingGroups[0].Instances[?LifecycleState=='InService'])" --output text 2>/dev/null)
-[[ "${ASG_DESIRED:-0}" -gt 0 ]] \
-  && pass "ASG (strata-asg) — $ASG_RUNNING/$ASG_DESIRED InService" \
-  || fail "ASG (strata-asg)" "not found or no instances"
+  --auto-scaling-group-names "strata-asg-dev" \
+  --query "length(AutoScalingGroups[0].Instances[?LifecycleState=='InService'])" --output text 2>/dev/null || echo "0")
+[[ "${ASG_DESIRED:-0}" != "None" && "${ASG_DESIRED:-0}" -gt 0 ]] \
+  && pass "ASG (strata-asg-dev) — $ASG_RUNNING/$ASG_DESIRED InService" \
+  || fail "ASG (strata-asg-dev)" "not found or no instances"
 
 # Launch Template
 LT_ID=$(aws ec2 describe-launch-templates \
