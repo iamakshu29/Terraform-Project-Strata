@@ -53,13 +53,18 @@ build {
     ]
     inline = [
       "echo Installing Nginx",
-      "sudo apt update",
-      "sudo apt install nginx",
+      "sudo apt-get update -y",
+      "sudo apt-get install -y nginx",
       "sudo systemctl enable --now nginx"
     ]
   }
 
   provisioner "shell" {
-    inline = ["echo This provisioner runs last"]
+    # SSM agent lets EC2 connect via Session Manager — no open port 22 needed
+    inline = [
+      "sudo snap install amazon-ssm-agent --classic",
+      "sudo systemctl enable snap.amazon-ssm-agent.amazon-ssm-agent.service",
+      "sudo systemctl start snap.amazon-ssm-agent.amazon-ssm-agent.service"
+    ]
   }
 }
