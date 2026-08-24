@@ -2,7 +2,7 @@
 resource "aws_security_group" "vpc_endpoints" {
   name   = "vpc-endpoints-sg"
   vpc_id = aws_vpc.strata.id
-  tags   = merge({ Name = "vpc-endpoints-sg" }, local.tags)
+  tags   = merge({ Name = "vpc-endpoints-sg-${var.env_tag}" }, local.tags)
 }
 
 resource "aws_vpc_security_group_ingress_rule" "vpc_endpoints_https" {
@@ -31,7 +31,7 @@ resource "aws_vpc_endpoint" "s3" {
     [for rt in aws_route_table.strata_data : rt.id],
   )
 
-  tags = merge({ Name = "endpoint-s3" }, local.tags)
+  tags = merge({ Name = "endpoint-s3-${var.env_tag}" }, local.tags)
 }
 
 # Interface endpoints — one ENI per private subnet, private DNS resolves service FQDNs to VPC IPs
@@ -45,5 +45,5 @@ resource "aws_vpc_endpoint" "interface" {
   security_group_ids  = [aws_security_group.vpc_endpoints.id]
   private_dns_enabled = true
 
-  tags = merge({ Name = "endpoint-${each.key}" }, local.tags)
+  tags = merge({ Name = "endpoint-${each.key}-${var.env_tag}" }, local.tags)
 }

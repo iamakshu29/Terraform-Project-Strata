@@ -6,7 +6,7 @@ resource "aws_secretsmanager_secret" "strata_db_secret" {
   # 0 = immediate deletion on destroy, avoiding the "scheduled for deletion" re-creation block
   recovery_window_in_days = 0
 
-  tags = merge({ Name = "strata-db-secret" }, local.tags)
+  tags = merge({ Name = "strata-db-secret-${var.env_tag}" }, local.tags)
 }
 
 # To stores the actual username/password

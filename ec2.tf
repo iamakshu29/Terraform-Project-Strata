@@ -17,7 +17,7 @@ resource "aws_instance" "strata_server" {
     kms_key_id            = aws_kms_key.strata.arn
   }
 
-  tags = merge({ Name = "strata-bastion" }, local.tags)
+  tags = merge({ Name = "strata-bastion-${var.env_tag}" }, local.tags)
 
   timeouts {
     create = "15m"
