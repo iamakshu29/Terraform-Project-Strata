@@ -12,7 +12,7 @@ resource "aws_instance" "strata_server" {
 
   root_block_device {
     volume_type           = "gp3"
-    volume_size           = 20
+    volume_size           = var.aws_bastian_instance.volume_size
     encrypted             = true
     delete_on_termination = true
   }
@@ -22,19 +22,4 @@ resource "aws_instance" "strata_server" {
   timeouts {
     create = "15m"
   }
-}
-
-resource "aws_ebs_volume" "strata_data_vol" {
-  availability_zone = var.aws_bastian_instance.subnet_az
-  size              = var.aws_bastian_instance.ebs_size
-  encrypted         = true
-  kms_key_id        = aws_kms_key.strata.arn
-
-  tags = merge({ Name = "strata-bastion-data-vol" }, local.tags)
-}
-
-resource "aws_volume_attachment" "strata_vol_att" {
-  device_name = "/dev/sdh" # Linux device mounting path
-  volume_id   = aws_ebs_volume.strata_data_vol.id
-  instance_id = aws_instance.strata_server.id
 }
