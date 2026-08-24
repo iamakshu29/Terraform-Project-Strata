@@ -49,8 +49,9 @@ resource "aws_lb_listener" "strata_https" {
   load_balancer_arn = aws_lb.strata[each.value.lb_key].arn
   port              = each.value.certficate_provided ? 443 : 80
   protocol          = each.value.certficate_provided ? "HTTPS" : "HTTP"
-  ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
-  certificate_arn   = each.value.certficate_provided ? aws_acm_certificate_validation.strata.certificate_arn : null
+  # ssl_policy and certificate_arn must be null for HTTP — AWS rejects them on non-TLS listeners
+  ssl_policy        = each.value.certficate_provided ? "ELBSecurityPolicy-TLS13-1-2-2021-06" : null
+  certificate_arn   = each.value.certficate_provided ? aws_acm_certificate.strata.arn : null
   default_action {
     type             = each.value.type
     target_group_arn = aws_lb_target_group.strata[each.key].arn
