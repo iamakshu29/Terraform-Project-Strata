@@ -48,7 +48,8 @@ resource "aws_lb_listener" "strata_https" {
 
   load_balancer_arn = aws_lb.strata[each.value.lb_key].arn
   # certficate_provided lives on var.lb, not var.target_group — look it up via lb_key
-  port              = var.lb[each.value.lb_key].certficate_provided ? 443 : 80
+  # use each target group's port for HTTP to avoid duplicate port 80 across listeners
+  port              = var.lb[each.value.lb_key].certficate_provided ? 443 : each.value.port
   protocol          = var.lb[each.value.lb_key].certficate_provided ? "HTTPS" : "HTTP"
   # ssl_policy and certificate_arn must be null for HTTP — AWS rejects them on non-TLS listeners
   ssl_policy        = var.lb[each.value.lb_key].certficate_provided ? "ELBSecurityPolicy-TLS13-1-2-2021-06" : null

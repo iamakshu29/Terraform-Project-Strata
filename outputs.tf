@@ -22,12 +22,6 @@ output "redis_reader_endpoint" {
   value       = aws_elasticache_replication_group.strata_redis.reader_endpoint_address
 }
 
-# Remote state
-output "state_bucket_name" {
-  description = "S3 state bucket name — copy into the backend block in provider.tf"
-  value       = aws_s3_bucket.strata_state.bucket
-}
-
 # Networking
 output "vpc_id" {
   description = "VPC ID"

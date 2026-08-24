@@ -62,11 +62,6 @@ resource "aws_cloudwatch_dashboard" "strata" {
             ["AWS/ApplicationELB", "RequestCount", "LoadBalancer", local.dimension_value_to_arn["lb-arn_suffix"]],
             ["AWS/ApplicationELB", "HTTPCode_ELB_5XX_Count", "LoadBalancer", local.dimension_value_to_arn["lb-arn_suffix"]],
           ]
-          annotations = {
-            alarms = [
-              aws_cloudwatch_metric_alarm.strata_metric_alarm_cw["metric_1"].arn
-            ]
-          }
         }
       },
       {
@@ -81,11 +76,6 @@ resource "aws_cloudwatch_dashboard" "strata" {
           metrics = [
             ["AWS/ApplicationELB", "TargetResponseTime", "LoadBalancer", local.dimension_value_to_arn["lb-arn_suffix"]],
           ]
-          annotations = {
-            alarms = [
-              aws_cloudwatch_metric_alarm.strata_metric_alarm_cw["metric_1"].arn
-            ]
-          }
         }
       },
       {
@@ -101,11 +91,6 @@ resource "aws_cloudwatch_dashboard" "strata" {
             ["AWS/RDS", "CPUUtilization", "DBInstanceIdentifier", local.dimension_value_to_arn["rds_identifier"]],
             ["AWS/RDS", "DatabaseConnections", "DBInstanceIdentifier", local.dimension_value_to_arn["rds_identifier"]]
           ]
-          annotations = {
-            alarms = [
-              aws_cloudwatch_metric_alarm.strata_metric_alarm_cw["metric_2"].arn
-            ]
-          }
         }
       },
       {
@@ -121,11 +106,6 @@ resource "aws_cloudwatch_dashboard" "strata" {
             ["AWS/ElastiCache", "DatabaseMemoryUsagePercentage", "ReplicationGroupId", local.dimension_value_to_arn["elasticache_rep_group_id"]],
             ["AWS/ElastiCache", "CurrConnections", "ReplicationGroupId", local.dimension_value_to_arn["elasticache_rep_group_id"]]
           ]
-          annotations = {
-            alarms = [
-              aws_cloudwatch_metric_alarm.strata_metric_alarm_cw["metric_5"].arn
-            ]
-          }
         }
       },
       {
@@ -141,12 +121,6 @@ resource "aws_cloudwatch_dashboard" "strata" {
             ["AWS/ECS", "CPUUtilization", "ClusterName", local.dimension_value_to_arn["ecs_cluster"], "ServiceName", local.dimension_value_to_arn["ecs_service"]],
             ["AWS/ECS", "MemoryUtilization", "ClusterName", local.dimension_value_to_arn["ecs_cluster"], "ServiceName", local.dimension_value_to_arn["ecs_service"]]
           ]
-          annotations = {
-            alarms = [
-              aws_cloudwatch_metric_alarm.strata_metric_alarm_cw["metric_3"].arn,
-              aws_cloudwatch_metric_alarm.strata_metric_alarm_cw["metric_4"].arn
-            ]
-          }
         }
       },
       {
@@ -161,11 +135,6 @@ resource "aws_cloudwatch_dashboard" "strata" {
           metrics = [
             ["AWS/ApplicationELB", "HealthyHostCount", "TargetGroup", local.dimension_value_to_arn["lb-target_group"], "LoadBalancer", local.dimension_value_to_arn["lb-arn_suffix"]]
           ]
-          annotations = {
-            alarms = [
-              aws_cloudwatch_metric_alarm.strata_metric_alarm_cw["metric_1"].arn
-            ]
-          }
         }
       },
     ]

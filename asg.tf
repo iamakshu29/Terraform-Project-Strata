@@ -5,7 +5,7 @@ resource "aws_iam_instance_profile" "strata" {
 }
 
 resource "aws_launch_template" "strata" {
-  name_prefix   = "strata-app-lt"
+  name          = "strata-app-lt"
   image_id      = data.aws_ami.ubuntu.id
   instance_type = var.launch_template.instance_type
   vpc_security_group_ids = [
