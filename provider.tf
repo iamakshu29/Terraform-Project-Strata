@@ -22,11 +22,3 @@ provider "aws" {
   region = var.aws_region
   profile = "strata"
 }
-
-# Dev
-# terraform init -backend-config="key=strata/dev/terraform.tfstate" -reconfigure
-# terraform apply -var-file="dev/terraform.tfvars"
-
-# Prod
-# terraform init -backend-config="key=strata/prod/terraform.tfstate" -reconfigure
-# terraform apply -var-file="prod/terraform.tfvars"

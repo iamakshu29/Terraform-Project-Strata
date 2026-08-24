@@ -68,13 +68,25 @@
 
 ## Phase 2 — Multi-Environment
 
-- [ ] Create directory structure: `dev/`, `staging/`, `prod/`
-- [ ] Separate `terraform.tfvars` per environment
-- [ ] Separate S3 state key per environment (`strata/dev/`, `strata/staging/`, `strata/prod/`)
-- [ ] Verify dev deploys cleanly
-- [ ] Verify staging deploys cleanly
-- [ ] Verify prod deploys cleanly
-- [ ] Set AWS billing alert at $5 before every apply session
+- [x] Create directory structure: `dev/`, `prod/`
+- [x] Separate `terraform.tfvars` per environment
+- [x] Separate S3 state key per environment (`strata/dev/`, `strata/staging/`, `strata/prod/`)
+- [x] Verify dev deploys cleanly
+- [x] Verify prod deploys cleanly
+
+```bash
+# Only once per env (or when switching envs) and Then every apply after that — no re-init needed:
+
+# Dev
+terraform init -backend-config="key=strata/dev/terraform.tfstate" -reconfigure
+terraform apply -var-file="dev/terraform.tfvars"
+
+# Prod
+terraform init -backend-config="key=strata/prod/terraform.tfstate" -reconfigure
+terraform apply -var-file="prod/terraform.tfvars"
+
+# You only need -reconfigure again when: Switching to prod (different state key)
+```
 
 ---
 
