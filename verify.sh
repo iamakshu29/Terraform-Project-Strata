@@ -4,7 +4,7 @@
 set -euo pipefail
 
 REGION="ap-south-1"
-PROFILE="strata"
+PROFILE="default"
 RDS_ID="strata-db"
 REDIS_ID="strata-redis"
 ECS_CLUSTER="strata-app-cluster"

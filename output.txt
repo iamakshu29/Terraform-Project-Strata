@@ -1,0 +1,19 @@
+
+Strata infrastructure check — region: ap-south-1  account: 025066281843
+=====================================================================
+
+[ Networking ]
+  [PASS] VPC (vpc-09e9c2ff7e67e6811) — available
+  [PASS] Public subnets — 3 found
+  [PASS] Private subnets — 3 found
+  [PASS] NAT Gateways — 2 available
+  [PASS] Internet Gateway — igw-0b220cef9079ae2ba
+
+[ Security ]
+  [FAIL] KMS key — alias/strata-key not found
+  [PASS] Secrets Manager — starta_secrets_manager exists
+  [PASS] CloudTrail (strata-trail) — logging
+  [PASS] CloudWatch log group — strata-cloudwatch-log-group
+
+[ Compute ]
+  [PASS] Bastion EC2 (i-0e30cdd0bee876ce7) — running
