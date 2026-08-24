@@ -17,8 +17,8 @@ STATE_BUCKET="strata-tfstate-${ACCOUNT_ID}"
 PASS=0
 FAIL=0
 
-pass() { echo "  [PASS] $1"; ((PASS++)); }
-fail() { echo "  [FAIL] $1 — $2"; ((FAIL++)); }
+pass() { echo "  [PASS] $1"; PASS=$((PASS + 1)); }
+fail() { echo "  [FAIL] $1 — $2"; FAIL=$((FAIL + 1)); }
 
 echo ""
 echo "Strata infrastructure check — region: $REGION  account: $ACCOUNT_ID"
@@ -27,31 +27,29 @@ echo "====================================================================="
 # ── VPC ──────────────────────────────────────────────────────────────────────
 echo ""
 echo "[ Networking ]"
-VPC_STATE=$(aws ec2 describe-vpcs \
+VPC_JSON=$(aws ec2 describe-vpcs \
   --profile "$PROFILE" --region "$REGION" \
   --filters "Name=tag:Project,Values=Strata" \
-  --query "Vpcs[0].State" --output text 2>/dev/null)
-VPC_ID=$(aws ec2 describe-vpcs \
-  --profile "$PROFILE" --region "$REGION" \
-  --filters "Name=tag:Project,Values=Strata" \
-  --query "Vpcs[0].VpcId" --output text 2>/dev/null)
+  --query "Vpcs[0].{State:State,VpcId:VpcId}" --output json 2>/dev/null)
+VPC_STATE=$(echo "$VPC_JSON" | grep -o '"State": *"[^"]*"' | cut -d'"' -f4)
+VPC_ID=$(echo "$VPC_JSON"   | grep -o '"VpcId": *"[^"]*"' | cut -d'"' -f4)
 [[ "$VPC_STATE" == "available" ]] \
   && pass "VPC ($VPC_ID) — available" \
   || fail "VPC" "state=${VPC_STATE:-not found}"
 
-# Public subnets (3)
+# Public subnets (3) — tagged Name=public-*
 PUB_COUNT=$(aws ec2 describe-subnets \
   --profile "$PROFILE" --region "$REGION" \
-  --filters "Name=vpc-id,Values=$VPC_ID" "Name=tag:Tier,Values=Public" \
+  --filters "Name=vpc-id,Values=$VPC_ID" "Name=tag:Name,Values=public-*" \
   --query "length(Subnets)" --output text 2>/dev/null)
 [[ "${PUB_COUNT:-0}" -ge 3 ]] \
   && pass "Public subnets — $PUB_COUNT found" \
   || fail "Public subnets" "found=${PUB_COUNT:-0} (expected 3)"
 
-# Private subnets (3)
+# Private subnets (3) — tagged Name=private-*
 PRIV_COUNT=$(aws ec2 describe-subnets \
   --profile "$PROFILE" --region "$REGION" \
-  --filters "Name=vpc-id,Values=$VPC_ID" "Name=tag:Tier,Values=Private" \
+  --filters "Name=vpc-id,Values=$VPC_ID" "Name=tag:Name,Values=private-*" \
   --query "length(Subnets)" --output text 2>/dev/null)
 [[ "${PRIV_COUNT:-0}" -ge 3 ]] \
   && pass "Private subnets — $PRIV_COUNT found" \
@@ -80,9 +78,6 @@ echo ""
 echo "[ Security ]"
 
 # KMS Key
-KMS_STATE=$(aws kms list-keys \
-  --profile "$PROFILE" --region "$REGION" \
-  --query "Keys" --output text 2>/dev/null | wc -l)
 KMS_ID=$(aws kms describe-key \
   --profile "$PROFILE" --region "$REGION" \
   --key-id "alias/strata-key" \
@@ -122,15 +117,13 @@ CW_ARN=$(aws logs describe-log-groups \
 echo ""
 echo "[ Compute ]"
 
-# Bastion EC2
-BASTION_STATE=$(aws ec2 describe-instances \
+# Bastion EC2 — single call fetching both fields
+BASTION_JSON=$(aws ec2 describe-instances \
   --profile "$PROFILE" --region "$REGION" \
   --filters "Name=tag:Name,Values=strata-bastion" "Name=instance-state-name,Values=running" \
-  --query "Reservations[0].Instances[0].State.Name" --output text 2>/dev/null)
-BASTION_ID=$(aws ec2 describe-instances \
-  --profile "$PROFILE" --region "$REGION" \
-  --filters "Name=tag:Name,Values=strata-bastion" "Name=instance-state-name,Values=running" \
-  --query "Reservations[0].Instances[0].InstanceId" --output text 2>/dev/null)
+  --query "Reservations[0].Instances[0].{State:State.Name,Id:InstanceId}" --output json 2>/dev/null)
+BASTION_STATE=$(echo "$BASTION_JSON" | grep -o '"State": *"[^"]*"' | cut -d'"' -f4)
+BASTION_ID=$(echo "$BASTION_JSON"   | grep -o '"Id": *"[^"]*"'    | cut -d'"' -f4)
 [[ "$BASTION_STATE" == "running" ]] \
   && pass "Bastion EC2 ($BASTION_ID) — running" \
   || fail "Bastion EC2" "state=${BASTION_STATE:-not found}"
@@ -161,18 +154,14 @@ LT_ID=$(aws ec2 describe-launch-templates \
 echo ""
 echo "[ Load Balancer ]"
 
-ALB_STATE=$(aws elbv2 describe-load-balancers \
+# ALB — single call fetching all three fields
+ALB_JSON=$(aws elbv2 describe-load-balancers \
   --profile "$PROFILE" --region "$REGION" \
   --names "$ALB_NAME" \
-  --query "LoadBalancers[0].State.Code" --output text 2>/dev/null)
-ALB_DNS=$(aws elbv2 describe-load-balancers \
-  --profile "$PROFILE" --region "$REGION" \
-  --names "$ALB_NAME" \
-  --query "LoadBalancers[0].DNSName" --output text 2>/dev/null)
-ALB_ARN=$(aws elbv2 describe-load-balancers \
-  --profile "$PROFILE" --region "$REGION" \
-  --names "$ALB_NAME" \
-  --query "LoadBalancers[0].LoadBalancerArn" --output text 2>/dev/null)
+  --query "LoadBalancers[0].{State:State.Code,DNS:DNSName,ARN:LoadBalancerArn}" --output json 2>/dev/null)
+ALB_STATE=$(echo "$ALB_JSON" | grep -o '"State": *"[^"]*"' | cut -d'"' -f4)
+ALB_DNS=$(echo "$ALB_JSON"   | grep -o '"DNS": *"[^"]*"'   | cut -d'"' -f4)
+ALB_ARN=$(echo "$ALB_JSON"   | grep -o '"ARN": *"[^"]*"'   | cut -d'"' -f4)
 [[ "$ALB_STATE" == "active" ]] \
   && pass "ALB ($ALB_NAME) — $ALB_DNS" \
   || fail "ALB ($ALB_NAME)" "state=${ALB_STATE:-not found}"
@@ -238,26 +227,24 @@ ECR_URI=$(aws ecr describe-repositories \
 echo ""
 echo "[ Data ]"
 
-RDS_STATUS=$(aws rds describe-db-instances \
+# RDS — single call
+RDS_JSON=$(aws rds describe-db-instances \
   --profile "$PROFILE" --region "$REGION" \
   --db-instance-identifier "$RDS_ID" \
-  --query "DBInstances[0].DBInstanceStatus" --output text 2>/dev/null)
-RDS_ENDPOINT=$(aws rds describe-db-instances \
-  --profile "$PROFILE" --region "$REGION" \
-  --db-instance-identifier "$RDS_ID" \
-  --query "DBInstances[0].Endpoint.Address" --output text 2>/dev/null)
+  --query "DBInstances[0].{S:DBInstanceStatus,E:Endpoint.Address}" --output json 2>/dev/null)
+RDS_STATUS=$(echo "$RDS_JSON"   | grep -o '"S": *"[^"]*"' | cut -d'"' -f4)
+RDS_ENDPOINT=$(echo "$RDS_JSON" | grep -o '"E": *"[^"]*"' | cut -d'"' -f4)
 [[ "$RDS_STATUS" == "available" ]] \
   && pass "RDS ($RDS_ID) — $RDS_ENDPOINT" \
   || fail "RDS ($RDS_ID)" "status=${RDS_STATUS:-not found}"
 
-REDIS_STATUS=$(aws elasticache describe-replication-groups \
+# Redis — single call
+REDIS_JSON=$(aws elasticache describe-replication-groups \
   --profile "$PROFILE" --region "$REGION" \
   --replication-group-id "$REDIS_ID" \
-  --query "ReplicationGroups[0].Status" --output text 2>/dev/null)
-REDIS_PRIMARY=$(aws elasticache describe-replication-groups \
-  --profile "$PROFILE" --region "$REGION" \
-  --replication-group-id "$REDIS_ID" \
-  --query "ReplicationGroups[0].NodeGroups[0].PrimaryEndpoint.Address" --output text 2>/dev/null)
+  --query "ReplicationGroups[0].{S:Status,E:NodeGroups[0].PrimaryEndpoint.Address}" --output json 2>/dev/null)
+REDIS_STATUS=$(echo "$REDIS_JSON"  | grep -o '"S": *"[^"]*"' | cut -d'"' -f4)
+REDIS_PRIMARY=$(echo "$REDIS_JSON" | grep -o '"E": *"[^"]*"' | cut -d'"' -f4)
 [[ "$REDIS_STATUS" == "available" ]] \
   && pass "Redis ($REDIS_ID) — primary=$REDIS_PRIMARY" \
   || fail "Redis ($REDIS_ID)" "status=${REDIS_STATUS:-not found}"
@@ -286,127 +273,6 @@ done
 # ── Summary ───────────────────────────────────────────────────────────────────
 echo ""
 echo "====================================================================="
-echo "Result: $PASS passed, $FAIL failed"
-echo ""
-[[ $FAIL -eq 0 ]] && exit 0 || exit 1
-
-PASS=0
-FAIL=0
-
-pass() { echo "  [PASS] $1"; ((PASS++)); }
-fail() { echo "  [FAIL] $1 — $2"; ((FAIL++)); }
-
-echo ""
-echo "Strata infrastructure check — region: $REGION"
-echo "-------------------------------------------------------"
-
-# VPC
-VPC_STATE=$(aws ec2 describe-vpcs \
-  --region "$REGION" \
-  --filters "Name=tag:Project,Values=Strata" \
-  --query "Vpcs[0].State" --output text 2>/dev/null)
-[[ "$VPC_STATE" == "available" ]] \
-  && pass "VPC — available" \
-  || fail "VPC" "state=${VPC_STATE:-not found}"
-
-# ALB
-ALB_STATE=$(aws elbv2 describe-load-balancers \
-  --region "$REGION" \
-  --names "$ALB_NAME" \
-  --query "LoadBalancers[0].State.Code" --output text 2>/dev/null)
-ALB_DNS=$(aws elbv2 describe-load-balancers \
-  --region "$REGION" \
-  --names "$ALB_NAME" \
-  --query "LoadBalancers[0].DNSName" --output text 2>/dev/null)
-[[ "$ALB_STATE" == "active" ]] \
-  && pass "ALB — $ALB_DNS" \
-  || fail "ALB" "state=${ALB_STATE:-not found}"
-
-# ALB target group health
-ALB_ARN=$(aws elbv2 describe-load-balancers \
-  --region "$REGION" \
-  --names "$ALB_NAME" \
-  --query "LoadBalancers[0].LoadBalancerArn" --output text 2>/dev/null)
-if [[ -n "$ALB_ARN" && "$ALB_ARN" != "None" ]]; then
-  TG_ARNS=$(aws elbv2 describe-target-groups \
-    --region "$REGION" \
-    --load-balancer-arn "$ALB_ARN" \
-    --query "TargetGroups[*].TargetGroupArn" --output text 2>/dev/null)
-  for TG_ARN in $TG_ARNS; do
-    TG_NAME=$(aws elbv2 describe-target-groups \
-      --region "$REGION" \
-      --target-group-arns "$TG_ARN" \
-      --query "TargetGroups[0].TargetGroupName" --output text)
-    HEALTHY=$(aws elbv2 describe-target-health \
-      --region "$REGION" \
-      --target-group-arn "$TG_ARN" \
-      --query "length(TargetHealthDescriptions[?TargetHealth.State=='healthy'])" \
-      --output text 2>/dev/null)
-    [[ "${HEALTHY:-0}" -gt 0 ]] \
-      && pass "  Target group $TG_NAME — $HEALTHY healthy target(s)" \
-      || fail "  Target group $TG_NAME" "0 healthy targets"
-  done
-fi
-
-# RDS
-RDS_STATUS=$(aws rds describe-db-instances \
-  --region "$REGION" \
-  --db-instance-identifier "$RDS_ID" \
-  --query "DBInstances[0].DBInstanceStatus" --output text 2>/dev/null)
-RDS_ENDPOINT=$(aws rds describe-db-instances \
-  --region "$REGION" \
-  --db-instance-identifier "$RDS_ID" \
-  --query "DBInstances[0].Endpoint.Address" --output text 2>/dev/null)
-[[ "$RDS_STATUS" == "available" ]] \
-  && pass "RDS ($RDS_ID) — available, endpoint=$RDS_ENDPOINT" \
-  || fail "RDS ($RDS_ID)" "status=${RDS_STATUS:-not found}"
-
-# Redis
-REDIS_STATUS=$(aws elasticache describe-replication-groups \
-  --region "$REGION" \
-  --replication-group-id "$REDIS_ID" \
-  --query "ReplicationGroups[0].Status" --output text 2>/dev/null)
-REDIS_PRIMARY=$(aws elasticache describe-replication-groups \
-  --region "$REGION" \
-  --replication-group-id "$REDIS_ID" \
-  --query "ReplicationGroups[0].NodeGroups[0].PrimaryEndpoint.Address" --output text 2>/dev/null)
-[[ "$REDIS_STATUS" == "available" ]] \
-  && pass "Redis ($REDIS_ID) — available, primary=$REDIS_PRIMARY" \
-  || fail "Redis ($REDIS_ID)" "status=${REDIS_STATUS:-not found}"
-
-# ECS
-RUNNING=$(aws ecs describe-services \
-  --region "$REGION" \
-  --cluster "$ECS_CLUSTER" \
-  --services "$ECS_SERVICE" \
-  --query "services[0].runningCount" --output text 2>/dev/null)
-DESIRED=$(aws ecs describe-services \
-  --region "$REGION" \
-  --cluster "$ECS_CLUSTER" \
-  --services "$ECS_SERVICE" \
-  --query "services[0].desiredCount" --output text 2>/dev/null)
-[[ "${RUNNING:-0}" -gt 0 ]] \
-  && pass "ECS service ($ECS_SERVICE) — $RUNNING/$DESIRED tasks running" \
-  || fail "ECS service ($ECS_SERVICE)" "running=${RUNNING:-0}, desired=${DESIRED:-0}"
-
-# ECR
-ECR_URI=$(aws ecr describe-repositories \
-  --region "$REGION" \
-  --repository-names "$ECR_REPO" \
-  --query "repositories[0].repositoryUri" --output text 2>/dev/null)
-[[ -n "$ECR_URI" && "$ECR_URI" != "None" ]] \
-  && pass "ECR repo ($ECR_REPO) — $ECR_URI" \
-  || fail "ECR repo ($ECR_REPO)" "not found"
-
-# S3
-for BUCKET in "strata-bucket-$ACCOUNT_ID" "strata-logging-bucket-$ACCOUNT_ID" "strata-bucket" "strata-logging-bucket"; do
-  if aws s3api head-bucket --bucket "$BUCKET" --region "$REGION" 2>/dev/null; then
-    pass "S3 bucket ($BUCKET) — exists"
-    break
-  fi
-done
-
-echo "-------------------------------------------------------"
 echo "Result: $PASS passed, $FAIL failed"
 echo ""
 [[ $FAIL -eq 0 ]] && exit 0 || exit 1
