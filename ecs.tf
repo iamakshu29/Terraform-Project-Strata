@@ -63,6 +63,7 @@ resource "aws_ecs_task_definition" "service" {
         {
           containerPort = c.containerPort
           hostPort      = c.hostPort
+          name          = c.port_name
         }
       ]
       logConfiguration = {
@@ -110,6 +111,7 @@ resource "aws_ecs_service" "strata_service" {
     log_configuration {
       log_driver = "awslogs"
       options = {
+        "awslogs-region"        = "ap-south-1"
         "awslogs-group"         = aws_cloudwatch_log_group.strata_log_group.name
         "awslogs-stream-prefix" = "service-connect"
       }

@@ -337,7 +337,7 @@ aws_bastian_instance = {
 }
 
 launch_template = {
-  instance_type               = "t2.medium"
+  instance_type               = "t3.medium"
   subnet_az                   = "ap-south-1b"
   subnet_type                 = "private"
   associate_public_ip_address = false
@@ -688,7 +688,7 @@ ecs_service = {
     placement_strategy_type      = "binpack"
     placement_strategy_field     = "cpu"
     ecs_target_group             = "strataECS" # same as target_group key for ecs
-    lb_container_name            = "eaxmple-container"
+    lb_container_name            = "strata-app-1"
     container_port               = 8080
     alarms_enabled               = true
     rollback                     = true
@@ -718,8 +718,9 @@ task_definitions = {
         cpu           = 10
         memory        = 512
         essential     = true
-        containerPort = 80
-        hostPort      = 80
+        containerPort = 8080
+        hostPort      = 8080
+        port_name     = "http"
         network_mode  = "awsvpc"
       }
       image_2 = {
@@ -730,6 +731,7 @@ task_definitions = {
         essential     = true
         containerPort = 443
         hostPort      = 443
+        port_name     = "https"
         network_mode  = "awsvpc"
       }
     }
