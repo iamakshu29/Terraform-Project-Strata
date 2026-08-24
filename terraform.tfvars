@@ -1,6 +1,6 @@
 aws_region = "ap-south-1"
 
-domain_name = "strata.example.com"
+domain_name = "strata.example.in"
 
 env_tag = "dev"
 
@@ -273,23 +273,24 @@ lb = {
   strataLB = {
     internal                   = false # public-facing ALB in public subnets
     load_balancer_type         = "application"
-    enable_deletion_protection = true
+    enable_deletion_protection = false
     port                       = "443"
     protocol                   = "HTTPS"
+    certficate_provided        = false
   }
 }
 
 target_group = {
   strataInstance = {
-    port        = 8443
-    protocol    = "HTTPS"
+    port        = 8080
+    protocol    = "HTTP"
     target_type = "instance"
     type        = "forward"
     lb_key      = "strataLB" # Matches the key in var.lb
   }
   strataECS = {
-    port        = 8442
-    protocol    = "HTTPS"
+    port        = 8080
+    protocol    = "HTTP"
     target_type = "ip"
     type        = "forward"
     lb_key      = "strataLB" # Matches the key in var.lb
@@ -305,11 +306,11 @@ rds = {
   identifier                 = "strata-db"
   multi_az                   = true
   publicly_accessible        = false
-  deletion_protection        = true
+  deletion_protection        = false
   storage_encrypted          = true
-  skip_final_snapshot        = false # true for Prod only
+  skip_final_snapshot        = true # false for Prod only
   apply_immediately          = false
-  engine_version             = "16.2"
+  engine_version             = "16.13"
   instance_class             = "db.t3.medium" # "db.t3.medium" for dev, "db.r6g.large" minimum for prod
   engine                     = "postgres"
   db_name                    = "testDB"
@@ -328,15 +329,15 @@ secrets = {
 
 # ---------------------------------------------------------
 aws_bastian_instance = {
-  instance_type               = "t2.medium"
+  instance_type               = "t2.micro"
   subnet_az                   = "ap-south-1a"
   subnet_type                 = "public"
   associate_public_ip_address = true
-  ebs_size                    = 40
+  volume_size                 = 40
 }
 
 launch_template = {
-  instance_type               = "t3.large"
+  instance_type               = "t3.medium"
   subnet_az                   = "ap-south-1b"
   subnet_type                 = "private"
   associate_public_ip_address = false
@@ -539,7 +540,7 @@ cloudwatch = {
 }
 
 s3 = {
-  strata_bucket = {
+  strata-bucket = {
     block_public_acls              = true
     block_public_policy            = true
     ignore_public_acls             = true
@@ -554,7 +555,7 @@ s3 = {
     delete_data_after              = 365
     logging                        = false
   }
-  strata_logging_bucket = {
+  strata-logging-bucket = {
     block_public_acls              = true
     block_public_policy            = true
     ignore_public_acls             = true
@@ -589,45 +590,62 @@ elasticache = {
   apply_immediately        = false
 }
 
-
-# change dim_key and value
 metrics = {
   metric_1 = {
-    metric_name = "HTTPCode_ELB_5XX_Rate"
+    metric_name = "HTTPCode_ELB_5XX_Count"
     namespace   = "AWS/ApplicationELB"
     period      = 120
-    stat        = "Average"
+    stat        = "Sum"
     # for percentage --extended-statistics p99 p95 p50.
     unit            = "Count"
     dimension_key   = "LoadBalancer"
-    dimension_value = "app/web"
+    dimension_value = "lb-arn_suffix"
+    threshold       = 10
+    description     = "ALB 5XX errors"
   }
   metric_2 = {
-    metric_name     = "RDS_Connections_Count"
+    metric_name     = "DatabaseConnections"
     namespace       = "AWS/RDS"
-    period          = 120
-    stat            = "Sum"
-    unit            = "Count"
-    dimension_key   = "LoadBalancer"
-    dimension_value = "app/web"
-  }
-  metric_3 = {
-    metric_name     = "ECS_CPU_Utilization"
-    namespace       = "AWS/ECS"
-    period          = 120
-    stat            = "Sum"
-    unit            = "Count"
-    dimension_key   = "LoadBalancer"
-    dimension_value = "app/web"
-  }
-  metric_4 = {
-    metric_name     = "ElastiCache_Redis_Memory_Utilization"
-    namespace       = "AWS/RedisCache"
     period          = 120
     stat            = "Average"
     unit            = "Count"
-    dimension_key   = "LoadBalancer"
-    dimension_value = "app/web"
+    dimension_key   = "DBInstanceIdentifier"
+    dimension_value = "rds_identifier"
+    threshold       = 80
+    description     = "RDS database connections"
+  }
+  metric_3 = {
+    metric_name     = "CPUUtilization"
+    namespace       = "AWS/ECS"
+    period          = 120
+    stat            = "Average"
+    unit            = "Percent"
+    dimension_key   = "ClusterName"
+    dimension_value = "ecs_cluster"
+    threshold       = 80
+    description     = "ECS cluster CPU utilization"
+  }
+  metric_4 = {
+    metric_name     = "CPUUtilization"
+    namespace       = "AWS/ECS"
+    period          = 120
+    stat            = "Average"
+    unit            = "Percent"
+    dimension_key   = "ServiceName"
+    dimension_value = "ecs_service"
+    threshold       = 80
+    description     = "ECS service CPU utilization"
+  }
+  metric_5 = {
+    metric_name     = "DatabaseMemoryUsagePercentage"
+    namespace       = "AWS/ElastiCache"
+    period          = 120
+    stat            = "Average"
+    unit            = "Count"
+    dimension_key   = "ReplicationGroupId"
+    dimension_value = "elasticache_rep_group_id"
+    threshold       = 80
+    description     = "ElastiCache Redis memory utilization"
   }
 }
 
@@ -670,7 +688,7 @@ ecs_service = {
     placement_strategy_type      = "binpack"
     placement_strategy_field     = "cpu"
     ecs_target_group             = "strataECS" # same as target_group key for ecs
-    lb_container_name            = "eaxmple-container"
+    lb_container_name            = "strata-app-1"
     container_port               = 8080
     alarms_enabled               = true
     rollback                     = true
@@ -696,22 +714,24 @@ task_definitions = {
     tasks = {
       image_1 = {
         name          = "strata-app-1"
-        image         = "strata-image-1"
+        image         = "public.ecr.aws/nginx/nginx:latest"
         cpu           = 10
         memory        = 512
         essential     = true
-        containerPort = 80
-        hostPort      = 80
+        containerPort = 8080
+        hostPort      = 8080
+        port_name     = "http"
         network_mode  = "awsvpc"
       }
       image_2 = {
         name          = "strata-app-2"
-        image         = "strata-image-2"
+        image         = "public.ecr.aws/nginx/nginx:latest"
         cpu           = 10
         memory        = 256
         essential     = true
         containerPort = 443
         hostPort      = 443
+        port_name     = "https"
         network_mode  = "awsvpc"
       }
     }

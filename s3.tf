@@ -1,9 +1,10 @@
 resource "aws_s3_bucket" "strata_bucket" {
   for_each = var.s3
 
-  bucket = each.key
+  # account ID suffix ensures global uniqueness across all AWS accounts
+  bucket = "${each.key}-${data.aws_caller_identity.current.account_id}"
 
-  tags = local.tags
+  tags = merge({ Name = each.key }, local.tags)
 }
 
 # S3 Versioning block
@@ -29,7 +30,7 @@ resource "aws_s3_bucket_public_access_block" "strata_bucket_access_block" {
 }
 
 # S3 Lifecycle Configuration block
-resource "aws_s3_bucket_lifecycle_configuration" "starta_s3_lifecycle_config" {
+resource "aws_s3_bucket_lifecycle_configuration" "strata_s3_lifecycle_config" {
   for_each = var.s3
 
   bucket = aws_s3_bucket.strata_bucket[each.key].id
@@ -56,15 +57,15 @@ resource "aws_s3_bucket_lifecycle_configuration" "starta_s3_lifecycle_config" {
   }
 }
 
-# S3 SSE-encryption with KMS block
-resource "aws_s3_bucket_server_side_encryption_configuration" "example" {
+# S3 SSE-encryption (AES256 for logging bucket so ALB can deliver logs, KMS for application buckets)
+resource "aws_s3_bucket_server_side_encryption_configuration" "strata_bucket_encryption" {
   for_each = var.s3
   bucket   = aws_s3_bucket.strata_bucket[each.key].id
 
   rule {
     apply_server_side_encryption_by_default {
-      kms_master_key_id = aws_kms_key.strata.arn
-      sse_algorithm     = "aws:kms"
+      kms_master_key_id = each.value.logging ? null : aws_kms_key.strata.arn
+      sse_algorithm     = each.value.logging ? "AES256" : "aws:kms"
     }
   }
 }

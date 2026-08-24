@@ -40,3 +40,6 @@ CLAUDE.local.md
 strata-key
 *.pem
 *.key
+
+# Packer
+**/.packer/

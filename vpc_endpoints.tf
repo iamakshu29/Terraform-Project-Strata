@@ -35,19 +35,6 @@ resource "aws_vpc_endpoint" "s3" {
 }
 
 # Interface endpoints — one ENI per private subnet, private DNS resolves service FQDNs to VPC IPs
-locals {
-  interface_endpoints = {
-    ecr_api        = "com.amazonaws.${var.aws_region}.ecr.api"
-    ecr_dkr        = "com.amazonaws.${var.aws_region}.ecr.dkr"
-    secretsmanager = "com.amazonaws.${var.aws_region}.secretsmanager"
-    ssm            = "com.amazonaws.${var.aws_region}.ssm"
-    ssmmessages    = "com.amazonaws.${var.aws_region}.ssmmessages" # required for Session Manager
-    ec2messages    = "com.amazonaws.${var.aws_region}.ec2messages" # required for Session Manager
-    logs           = "com.amazonaws.${var.aws_region}.logs"
-    kms            = "com.amazonaws.${var.aws_region}.kms"
-  }
-}
-
 resource "aws_vpc_endpoint" "interface" {
   for_each = local.interface_endpoints
 

@@ -5,7 +5,7 @@ resource "aws_iam_instance_profile" "strata" {
 }
 
 resource "aws_launch_template" "strata" {
-  name_prefix   = "strata-app-lt"
+  name          = "strata-app-lt"
   image_id      = data.aws_ami.ubuntu.id
   instance_type = var.launch_template.instance_type
   vpc_security_group_ids = [
@@ -28,6 +28,18 @@ resource "aws_launch_template" "strata" {
       delete_on_termination = var.launch_template.deletion_on_termination # Cleans up the disk when ASG terminates the instance
     }
   }
+
+  # Installs Nginx on port 8080 with /health for ALB health checks
+  user_data = base64encode(<<-EOF
+    #!/bin/bash
+    apt-get update -y
+    apt-get install -y nginx
+    sed -i 's/listen 80 default_server/listen 8080 default_server/' /etc/nginx/sites-available/default
+    sed -i 's/listen \[\:\:\]:80 default_server/listen [::]:8080 default_server/' /etc/nginx/sites-available/default
+    sed -i '/server_name _;/a\\tlocation /health { return 200 "OK"; add_header Content-Type text/plain; }' /etc/nginx/sites-available/default
+    systemctl enable --now nginx
+  EOF
+  )
 
 }
 
@@ -54,14 +66,14 @@ resource "aws_autoscaling_group" "strata" {
     delete = var.asg.delete
   }
 
-  #   dynamic "tag" {
-  #     for_each = var.extra_tags
-  #     content {
-  #       key                 = tag.value.key
-  #       propagate_at_launch = tag.value.propagate_at_launch
-  #       value               = tag.value.value
-  #     }
-  #   }
+  dynamic "tag" {
+    for_each = merge({ Name = "strata-asg-instance" }, local.tags)
+    content {
+      key                 = tag.key
+      value               = tag.value
+      propagate_at_launch = true
+    }
+  }
 }
 
 # Scale out/in based on average ALB request count per instance.
@@ -79,4 +91,8 @@ resource "aws_autoscaling_policy" "strata_target_tracking" {
     # Scale out when avg request count per instance exceeds 1000 req/min
     target_value = 1000.0
   }
+
+  depends_on = [
+    aws_lb_listener.strata_https
+  ]
 }

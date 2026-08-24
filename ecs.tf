@@ -1,19 +1,15 @@
-
-# execution_role_arn = "" and task_role_arn = "" — empty strings, need actual IAM role references
-# network_configuration subnets and security_groups are empty []
-
 # EFS
 resource "aws_efs_file_system" "strata_efs" {
   for_each       = var.efs
   creation_token = each.value.creation_token
   encrypted      = each.value.encrypted
-  kms_key_id     = aws_kms_key.strata.id
+  kms_key_id     = aws_kms_key.strata.arn
 
   lifecycle_policy {
     transition_to_ia = each.value.transition_to_ia
   }
 
-  tags = local.tags
+  tags = merge({ Name = "strata-efs-${each.key}" }, local.tags)
 }
 
 # Mount targets — one per private subnet AZ so ECS tasks in every AZ can reach EFS
@@ -67,8 +63,20 @@ resource "aws_ecs_task_definition" "service" {
         {
           containerPort = c.containerPort
           hostPort      = c.hostPort
+          name          = c.port_name
         }
       ]
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          # 1. This is the missing line causing your error
+          "awslogs-region"        = "ap-south-1" # Match your AWS region
+          
+          "awslogs-group"         = "/ecs/${c.name}"
+          "awslogs-stream-prefix" = "ecs"
+        }
+      }
+
     }
   ])
 
@@ -103,6 +111,7 @@ resource "aws_ecs_service" "strata_service" {
     log_configuration {
       log_driver = "awslogs"
       options = {
+        "awslogs-region"        = "ap-south-1"
         "awslogs-group"         = aws_cloudwatch_log_group.strata_log_group.name
         "awslogs-stream-prefix" = "service-connect"
       }
@@ -134,8 +143,7 @@ resource "aws_ecs_service" "strata_service" {
   alarms {
     enable   = each.value.alarms_enabled
     rollback = each.value.rollback
-    alarm_names = [
-      aws_cloudwatch_metric_alarm.strata_metric_alarm_cw.alarm_name
-    ]
+    # alarm is for_each = var.metrics so iterate over the map
+    alarm_names = [for v in aws_cloudwatch_metric_alarm.strata_metric_alarm_cw : v.alarm_name]
   }
 }

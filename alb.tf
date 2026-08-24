@@ -10,12 +10,14 @@ resource "aws_lb" "strata" {
   enable_deletion_protection = each.value.enable_deletion_protection
 
   access_logs {
-    bucket  = aws_s3_bucket.strata_bucket["strata_logging_bucket"].bucket
+    bucket  = aws_s3_bucket.strata_bucket["strata-logging-bucket"].bucket
     prefix  = "alb-logs"
     enabled = true
   }
 
-  tags = local.tags
+  depends_on = [aws_s3_bucket_policy.strata_logging_bucket]
+
+  tags = merge({ Name = each.key }, local.tags)
 }
 
 resource "aws_lb_target_group" "strata" {
@@ -45,11 +47,13 @@ resource "aws_lb_listener" "strata_https" {
   for_each = var.target_group
 
   load_balancer_arn = aws_lb.strata[each.value.lb_key].arn
-  port              = each.value.port
-  protocol          = each.value.protocol
-  ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
-  certificate_arn   = aws_acm_certificate_validation.strata.certificate_arn
-
+  # certficate_provided lives on var.lb, not var.target_group — look it up via lb_key
+  # use each target group's port for HTTP to avoid duplicate port 80 across listeners
+  port              = var.lb[each.value.lb_key].certficate_provided ? 443 : each.value.port
+  protocol          = var.lb[each.value.lb_key].certficate_provided ? "HTTPS" : "HTTP"
+  # ssl_policy and certificate_arn must be null for HTTP — AWS rejects them on non-TLS listeners
+  ssl_policy        = var.lb[each.value.lb_key].certficate_provided ? "ELBSecurityPolicy-TLS13-1-2-2021-06" : null
+  certificate_arn   = var.lb[each.value.lb_key].certficate_provided ? aws_acm_certificate.strata.arn : null
   default_action {
     type             = each.value.type
     target_group_arn = aws_lb_target_group.strata[each.key].arn
@@ -57,18 +61,19 @@ resource "aws_lb_listener" "strata_https" {
 }
 
 # HTTP listener — redirects all port-80 traffic to HTTPS on the same port
-resource "aws_lb_listener" "strata_http_redirect" {
-  load_balancer_arn = aws_lb.strata["strataLB"].arn
-  port              = "80"
-  protocol          = "HTTP"
+## NOTE - uncomment when you have a valid certificate else both listeners will have a port-conflict.
+# resource "aws_lb_listener" "strata_http_redirect" {
+#   load_balancer_arn = aws_lb.strata["strataLB"].arn
+#   port              = "80"
+#   protocol          = "HTTP"
 
-  default_action {
-    type = "redirect"
+#   default_action {
+#     type = "redirect"
 
-    redirect {
-      port        = "443"
-      protocol    = "HTTPS"
-      status_code = "HTTP_301"
-    }
-  }
-}
+#     redirect {
+#       port        = "443"
+#       protocol    = "HTTPS"
+#       status_code = "HTTP_301"
+#     }
+#   }
+# }

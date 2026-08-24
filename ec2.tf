@@ -1,26 +1,3 @@
-data "aws_ami" "ubuntu" {
-  most_recent = true
-
-  owners = ["099720109477"] # Canonical
-
-  filter {
-    name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
-  }
-
-  filter {
-    name   = "virtualization-type"
-    values = ["hvm"]
-  }
-}
-
-locals {
-  subnet_map = {
-    public  = aws_subnet.strata_public_subnet
-    private = aws_subnet.strata_private_subnet
-  }
-}
-
 resource "aws_instance" "strata_server" {
   ami                         = data.aws_ami.ubuntu.id
   instance_type               = var.aws_bastian_instance.instance_type
@@ -30,20 +7,19 @@ resource "aws_instance" "strata_server" {
   # SSM Session Manager — no SSH key or open port 22 needed
   iam_instance_profile = aws_iam_instance_profile.strata.name
 
-  tags = local.tags
-}
+  depends_on = [aws_iam_role_policy_attachment.strata_ssm_core]
 
-resource "aws_ebs_volume" "strata_data_vol" {
-  availability_zone = var.aws_bastian_instance.subnet_az
-  size              = var.aws_bastian_instance.ebs_size
-  encrypted         = true
-  kms_key_id        = aws_kms_key.strata.arn
+  root_block_device {
+    volume_type           = "gp3"
+    volume_size           = var.aws_bastian_instance.volume_size
+    delete_on_termination = true
+    encrypted             = true
+    kms_key_id            = aws_kms_key.strata.arn
+  }
 
-  tags = local.tags
-}
+  tags = merge({ Name = "strata-bastion" }, local.tags)
 
-resource "aws_volume_attachment" "strata_vol_att" {
-  device_name = "/dev/sdh" # Linux device mounting path
-  volume_id   = aws_ebs_volume.strata_data_vol.id
-  instance_id = aws_instance.strata_server.id
+  timeouts {
+    create = "15m"
+  }
 }
