@@ -56,6 +56,23 @@ resource "aws_lb_listener" "strata_https" {
   }
 }
 
+# Routes /api/* to ECS — ensures strataECS TG is attached to the ALB (required by ECS service)
+resource "aws_lb_listener_rule" "strata_ecs" {
+  listener_arn = aws_lb_listener.strata_https["strataLB"].arn
+  priority     = 100
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.strata["strataECS"].arn
+  }
+
+  condition {
+    path_pattern {
+      values = ["/api/*"]
+    }
+  }
+}
+
 # HTTP listener — redirects all port-80 traffic to HTTPS on the same port
 ## NOTE - uncomment when you have a valid certificate else both listeners will have a port-conflict.
 # resource "aws_lb_listener" "strata_http_redirect" {

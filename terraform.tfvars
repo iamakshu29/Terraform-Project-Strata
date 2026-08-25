@@ -210,8 +210,20 @@ security_group = {
   }
 
   bastion = {
-    # No SSH ingress — access via SSM Session Manager only (no open port needed)
-    ingress = {}
+    ingress = {
+      https = {
+        cidr_ipv4   = "0.0.0.0/0"
+        from_port   = 443
+        to_port     = 443
+        ip_protocol = "tcp"
+      }
+      ssh = {
+        cidr_ipv4   = "0.0.0.0/0"
+        from_port   = 22
+        to_port     = 22
+        ip_protocol = "tcp"
+      }
+    }
   }
 
   rds = {
@@ -674,7 +686,7 @@ ecs_service = {
     task_key                     = "strata_task"              # must match task_definitions key
     cluster_key                  = "strata_cluster"           # must match ecs_cluster key
     namespace_key                = "strata_service_discovery" # must match service_discovery key
-    name                         = "mongodb"
+    name                         = "example-svc"
     desired_count                = 3
     launch_type                  = "FARGATE"
     enabled                      = true

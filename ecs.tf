@@ -69,8 +69,7 @@ resource "aws_ecs_task_definition" "service" {
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          # 1. This is the missing line causing your error
-          "awslogs-region"        = "ap-south-1" # Match your AWS region
+          "awslogs-region"        = data.aws_region.current.region
           
           "awslogs-group"         = "/ecs/${c.name}"
           "awslogs-stream-prefix" = "ecs"
@@ -111,7 +110,7 @@ resource "aws_ecs_service" "strata_service" {
     log_configuration {
       log_driver = "awslogs"
       options = {
-        "awslogs-region"        = "ap-south-1"
+        "awslogs-region"        = data.aws_region.current.region
         "awslogs-group"         = aws_cloudwatch_log_group.strata_log_group.name
         "awslogs-stream-prefix" = "service-connect"
       }
