@@ -18,8 +18,4 @@ resource "aws_instance" "strata_server" {
   }
 
   tags = merge({ Name = "strata-bastion" }, local.tags)
-
-  timeouts {
-    create = "15m"
-  }
 }

@@ -44,19 +44,15 @@ resource "aws_lb_target_group" "strata" {
 
 # HTTPS listeners — one per target group (port 8443 for ASG, port 8442 for ECS)
 resource "aws_lb_listener" "strata_https" {
-  for_each = var.target_group
+  for_each = var.lb
 
-  load_balancer_arn = aws_lb.strata[each.value.lb_key].arn
-  # certficate_provided lives on var.lb, not var.target_group — look it up via lb_key
-  # use each target group's port for HTTP to avoid duplicate port 80 across listeners
-  port              = var.lb[each.value.lb_key].certficate_provided ? 443 : each.value.port
-  protocol          = var.lb[each.value.lb_key].certficate_provided ? "HTTPS" : "HTTP"
-  # ssl_policy and certificate_arn must be null for HTTP — AWS rejects them on non-TLS listeners
-  ssl_policy        = var.lb[each.value.lb_key].certficate_provided ? "ELBSecurityPolicy-TLS13-1-2-2021-06" : null
-  certificate_arn   = var.lb[each.value.lb_key].certficate_provided ? aws_acm_certificate.strata.arn : null
+  load_balancer_arn = aws_lb.strata[each.key].arn
+  port              = each.value.port
+  protocol          = each.value.protocol
+
   default_action {
-    type             = each.value.type
-    target_group_arn = aws_lb_target_group.strata[each.key].arn
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.strata["strataInstance"].arn
   }
 }
 
