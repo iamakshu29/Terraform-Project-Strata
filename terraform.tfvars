@@ -114,6 +114,26 @@ private_nacl_rules = {
       to_port    = 443
       cidr_block = "0.0.0.0/0"
     }
+
+    # Return traffic for outbound connections (NAT → internet responses)
+    ingress_3 = {
+      protocol   = "tcp"
+      rule_no    = 200
+      action     = "allow"
+      from_port  = 1024
+      to_port    = 65535
+      cidr_block = "0.0.0.0/0"
+    }
+
+    # ICMP — allows instances to receive all ICMP (echo-reply, unreachable, etc.)
+    ingress_4 = {
+      protocol   = "icmp"
+      rule_no    = 300
+      action     = "allow"
+      from_port  = 0
+      to_port    = 0
+      cidr_block = "0.0.0.0/0"
+    }
   }
 
   egress = {
@@ -123,6 +143,35 @@ private_nacl_rules = {
       action     = "allow"
       from_port  = 1024
       to_port    = 65535
+      cidr_block = "0.0.0.0/0"
+    }
+
+    # Outbound HTTP/HTTPS via NAT (apt-get, AWS APIs not covered by VPC endpoints)
+    egress_2 = {
+      protocol   = "tcp"
+      rule_no    = 200
+      action     = "allow"
+      from_port  = 80
+      to_port    = 80
+      cidr_block = "0.0.0.0/0"
+    }
+
+    egress_3 = {
+      protocol   = "tcp"
+      rule_no    = 201
+      action     = "allow"
+      from_port  = 443
+      to_port    = 443
+      cidr_block = "0.0.0.0/0"
+    }
+
+    # ICMP — allows instances to send all ICMP outbound (echo-request, etc.)
+    egress_4 = {
+      protocol   = "icmp"
+      rule_no    = 300
+      action     = "allow"
+      from_port  = 0
+      to_port    = 0
       cidr_block = "0.0.0.0/0"
     }
   }

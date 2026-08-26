@@ -33,14 +33,15 @@ resource "aws_launch_template" "strata" {
     }
   }
 
-  # Installs Nginx on port 8080 with /health for ALB health checks
-  user_data = <<-EOF
-              #!/bin/bash
-              sudo apt-get update -y
-              sudo apt-get install nginx -y
-              sudo systemctl enable nginx
-              sudo systemctl start nginx
-              EOF
+  # aws_launch_template requires Base64-encoded user_data (unlike aws_instance)
+  user_data = base64encode(<<-EOF
+    #!/bin/bash
+    sudo apt-get update -y
+    sudo apt-get install nginx -y
+    sudo systemctl enable nginx
+    sudo systemctl start nginx
+    EOF
+  )
 }
 
 resource "aws_autoscaling_group" "strata" {

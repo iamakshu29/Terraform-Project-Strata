@@ -6,7 +6,10 @@ resource "aws_instance" "strata_server" {
   vpc_security_group_ids      = [aws_security_group.strata_sg["bastion"].id]
   iam_instance_profile        = aws_iam_instance_profile.strata.name
 
-  depends_on = [aws_iam_role_policy_attachment.strata_ssm_core]
+  depends_on = [
+    aws_iam_role_policy_attachment.strata_ssm_core,
+    aws_iam_role_policy_attachment.strata_attach_policy,
+  ]
 
   # IMDSv2 required — SSM agent, cloud-init, and all AWS SDKs on this instance must use token-based IMDS
   metadata_options {
@@ -31,8 +34,4 @@ resource "aws_instance" "strata_server" {
   }
 
   tags = merge({ Name = "strata-bastion" }, local.tags)
-
-  timeouts {
-    create = "15m"
-  }
 }
