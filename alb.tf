@@ -31,7 +31,7 @@ resource "aws_lb_target_group" "strata" {
 
   health_check {
     enabled             = true
-    path                = "/health"
+    path                = "/"
     protocol            = each.value.protocol
     port                = "traffic-port"
     healthy_threshold   = 3

@@ -6,17 +6,11 @@ resource "aws_instance" "strata_server" {
   vpc_security_group_ids      = [aws_security_group.strata_sg["bastion"].id]
   iam_instance_profile        = aws_iam_instance_profile.strata.name
 
+  # Wait for both attachments so IAM policies are globally propagated before instance launch
   depends_on = [
     aws_iam_role_policy_attachment.strata_ssm_core,
     aws_iam_role_policy_attachment.strata_attach_policy,
   ]
-
-  # IMDSv2 required — SSM agent, cloud-init, and all AWS SDKs on this instance must use token-based IMDS
-  metadata_options {
-    http_endpoint               = "enabled"
-    http_tokens                 = "required"
-    http_put_response_hop_limit = 1
-  }
 
   # Ensures SSM agent is running — Ubuntu 22.04 snap installs it but doesn't always start it
   user_data = <<-EOF
@@ -33,5 +27,6 @@ resource "aws_instance" "strata_server" {
     kms_key_id            = aws_kms_key.strata.arn
   }
 
-  tags = merge({ Name = "strata-bastion" }, local.tags)
+  tags = merge({ Name = "bastion-server" }, local.tags)
+
 }

@@ -120,7 +120,7 @@ echo "[ Compute ]"
 # Bastion EC2 — single call fetching both fields
 BASTION_JSON=$(aws ec2 describe-instances \
   --profile "$PROFILE" --region "$REGION" \
-  --filters "Name=tag:Name,Values=strata-bastion" "Name=instance-state-name,Values=running" \
+  --filters "Name=tag:Name,Values=bastion-server" "Name=instance-state-name,Values=running" \
   --query "Reservations[0].Instances[0].{State:State.Name,Id:InstanceId}" --output json 2>/dev/null)
 BASTION_STATE=$(echo "$BASTION_JSON" | grep -o '"State": *"[^"]*"' | cut -d'"' -f4)
 BASTION_ID=$(echo "$BASTION_JSON"   | grep -o '"Id": *"[^"]*"'    | cut -d'"' -f4)

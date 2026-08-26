@@ -65,6 +65,7 @@ nat_gateway_azs = ["ap-south-1a", "ap-south-1b"]
 # NACL Rules for Subnets
 public_nacl_rules = {
   ingress = {
+    # Internet → ALB (HTTPS/HTTP)
     ingress_1 = {
       protocol   = "tcp"
       rule_no    = 100
@@ -81,15 +82,42 @@ public_nacl_rules = {
       to_port    = 443
       cidr_block = "0.0.0.0/0"
     }
+    # Internet → NAT GW responses + ASG → ALB responses (ephemeral ports)
+    ingress_3 = {
+      protocol   = "tcp"
+      rule_no    = 200
+      action     = "allow"
+      from_port  = 1024
+      to_port    = 65535
+      cidr_block = "0.0.0.0/0"
+    }
   }
 
   egress = {
+    # ALB → internet responses + ALB → ASG (port 8080 is within this range)
     egress_1 = {
       protocol   = "tcp"
       rule_no    = 100
       action     = "allow"
       from_port  = 1024
       to_port    = 65535
+      cidr_block = "0.0.0.0/0"
+    }
+    # NAT GW → internet outbound requests (for ASG instances doing apt-get, etc.)
+    egress_2 = {
+      protocol   = "tcp"
+      rule_no    = 200
+      action     = "allow"
+      from_port  = 80
+      to_port    = 80
+      cidr_block = "0.0.0.0/0"
+    }
+    egress_3 = {
+      protocol   = "tcp"
+      rule_no    = 201
+      action     = "allow"
+      from_port  = 443
+      to_port    = 443
       cidr_block = "0.0.0.0/0"
     }
   }
@@ -251,8 +279,14 @@ security_group = {
     ingress = {
       alb = {
         source_security_group = "strataLB" # must match the ALB SG key
-        from_port             = 8080
-        to_port               = 8080
+        from_port             = 80
+        to_port               = 80
+        ip_protocol           = "tcp"
+      }
+      bastion = {
+        source_security_group = "bastion"
+        from_port             = 80
+        to_port               = 80
         ip_protocol           = "tcp"
       }
     }
@@ -343,7 +377,7 @@ lb = {
 
 target_group = {
   strataInstance = {
-    port        = 8080
+    port        = 80
     protocol    = "HTTP"
     target_type = "instance"
     type        = "forward"
@@ -391,7 +425,7 @@ secrets = {
 # ---------------------------------------------------------
 aws_bastian_instance = {
   instance_type               = "t2.micro"
-  subnet_az                   = "ap-south-1a"
+  subnet_az                   = "ap-south-1b"
   subnet_type                 = "public"
   associate_public_ip_address = true
   volume_size                 = 40
@@ -440,15 +474,23 @@ iam_policy = {
       resources = ["*"]
     }
     "read_cloudwatch_logs" = {
-      sid       = "ReadLog"
-      effect    = "Allow"
-      actions   = ["ssm:*"]
+      sid    = "WriteCloudWatchLogs"
+      effect = "Allow"
+      actions = [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents",
+        "logs:DescribeLogStreams"
+      ]
       resources = ["*"]
     }
     "x-ray_write" = {
-      sid       = "WriteXRay"
-      effect    = "Allow"
-      actions   = ["ssm:*"]
+      sid    = "WriteXRay"
+      effect = "Allow"
+      actions = [
+        "xray:PutTraceSegments",
+        "xray:PutTelemetryRecords"
+      ]
       resources = ["*"]
     }
     "rds_access-rw" = {
