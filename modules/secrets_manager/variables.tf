@@ -14,3 +14,7 @@ variable "secrets" {
   type        = map(string)
   description = "RDS username and password"
 }
+
+variable "kms_key_arn" {
+  type = string
+}

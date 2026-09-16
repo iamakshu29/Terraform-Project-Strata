@@ -9,3 +9,12 @@ variable "env_tag" {
   description = "Environment Value"
   default     = "dev"
 }
+
+variable "parameter_values" {
+  type    = map(string)
+  default = {}
+}
+
+variable "kms_key_arn" {
+  type = string
+}

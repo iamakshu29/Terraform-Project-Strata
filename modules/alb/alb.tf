@@ -4,18 +4,16 @@ resource "aws_lb" "strata" {
   name               = each.key
   internal           = each.value.internal
   load_balancer_type = each.value.load_balancer_type
-  security_groups    = [aws_security_group.strata_sg[each.key].id]
-  subnets            = [for subnet in aws_subnet.strata_public_subnet : subnet.id]
+  security_groups    = [var.security_group_ids[each.key]]
+  subnets            = values(var.public_subnet_ids)
 
   enable_deletion_protection = each.value.enable_deletion_protection
 
   access_logs {
-    bucket  = aws_s3_bucket.strata_bucket["strata-logging-bucket"].bucket
+    bucket  = var.logging_bucket_name
     prefix  = "alb-logs"
     enabled = true
   }
-
-  depends_on = [aws_s3_bucket_policy.strata_logging_bucket]
 
   tags = merge({ Name = "${each.key}-${var.env_tag}" }, local.tags)
 }
@@ -27,7 +25,7 @@ resource "aws_lb_target_group" "strata" {
   port        = each.value.port
   protocol    = each.value.protocol
   target_type = each.value.target_type
-  vpc_id      = aws_vpc.strata.id
+  vpc_id      = var.vpc_id
 
   health_check {
     enabled             = true

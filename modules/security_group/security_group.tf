@@ -2,7 +2,7 @@ resource "aws_security_group" "strata_sg" {
   for_each    = var.security_group
   name        = "${each.key}-sg"
   description = "Allow TLS inbound traffic and all outbound traffic"
-  vpc_id      = aws_vpc.strata.id
+  vpc_id      = var.vpc_id
 
   tags = {
     Name = "allow_tls"

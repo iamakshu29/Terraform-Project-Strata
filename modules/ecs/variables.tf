@@ -66,3 +66,34 @@ variable "ecs_service" {
 variable "task_definitions" {
   type = map(any)
 }
+
+variable "kms_key_arn" {
+  type = string
+}
+
+variable "private_subnet_ids" {
+  type = map(string)
+}
+
+variable "security_group_ids" {
+  type = map(string)
+}
+
+variable "role_arns" {
+  type = map(string)
+}
+
+variable "target_group_arns" {
+  type    = map(string)
+  default = {}
+}
+
+variable "service_log_group_name" {
+  type    = string
+  default = "/ecs/strata"
+}
+
+variable "alarm_names" {
+  type    = list(string)
+  default = []
+}

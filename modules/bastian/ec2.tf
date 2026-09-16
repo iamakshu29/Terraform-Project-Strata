@@ -1,15 +1,10 @@
 resource "aws_instance" "strata_server" {
   ami                         = data.aws_ami.ubuntu.id
   instance_type               = var.aws_bastian_instance.instance_type
-  subnet_id                   = aws_subnet.strata_public_subnet[var.aws_bastian_instance.subnet_az].id
+  subnet_id                   = var.subnet_id
   associate_public_ip_address = var.aws_bastian_instance.associate_public_ip_address
-  vpc_security_group_ids      = [aws_security_group.strata_sg["bastion"].id]
-  iam_instance_profile        = aws_iam_instance_profile.strata.name
-
-  depends_on = [
-    aws_iam_role_policy_attachment.strata_ssm_core,
-    aws_iam_role_policy_attachment.strata_attach_policy,
-  ]
+  vpc_security_group_ids      = [var.security_group_id]
+  iam_instance_profile        = var.iam_instance_profile_name
 
   # IMDSv2 required — SSM agent, cloud-init, and all AWS SDKs on this instance must use token-based IMDS
   metadata_options {
@@ -30,7 +25,7 @@ resource "aws_instance" "strata_server" {
     volume_size           = var.aws_bastian_instance.volume_size
     delete_on_termination = true
     encrypted             = true
-    kms_key_id            = aws_kms_key.strata.arn
+    kms_key_id            = var.kms_key_arn
   }
 
   tags = merge({ Name = "strata-bastion" }, local.tags)

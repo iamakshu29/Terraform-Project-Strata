@@ -12,11 +12,11 @@ resource "aws_cloudwatch_log_group" "strata_log_group" {
 }
 
 resource "aws_flow_log" "strata_flow_log" {
-  iam_role_arn    = aws_iam_role.strata[var.role_names.vpc_flow_log_role_key].arn
+  iam_role_arn    = var.flow_log_role_arn
   log_destination = aws_cloudwatch_log_group.strata_log_group.arn
   traffic_type    = "ALL"
 
-  vpc_id = aws_vpc.strata.id
+  vpc_id = var.vpc_id
 }
 
 # https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/aws-services-cloudwatch-metrics.html

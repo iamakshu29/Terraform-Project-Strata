@@ -11,3 +11,7 @@ variable "cloudtrail" {
     include_global_service_events = bool
   })
 }
+
+variable "logging_bucket_name" {
+  type = string
+}

@@ -10,6 +10,11 @@ variable "env_tag" {
   default     = "dev"
 }
 
+variable "vpc_id" {
+  type        = string
+  description = "VPC ID where security groups are created"
+}
+
 variable "security_group" {
   type = map(any)
 }

@@ -27,3 +27,21 @@ variable "s3" {
     logging                        = bool
   }))
 }
+
+variable "role_arns" {
+  type        = map(string)
+  description = "IAM role ARNs keyed by role name"
+}
+
+variable "role_names" {
+  type = object({
+    ec2_role_key          = string
+    ecs_role_key          = string
+    ecs_task_role_key     = string
+    vpc_flow_log_role_key = string
+  })
+}
+
+variable "kms_key_arn" {
+  type = string
+}

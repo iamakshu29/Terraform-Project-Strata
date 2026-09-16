@@ -144,3 +144,11 @@ variable "nacl_subnet_association" {
 variable "security_group" {
   type = map(any)
 }
+
+variable "route" {
+  type = object({
+    public_routes = map(object({
+      destination_cidr = string
+    }))
+  })
+}

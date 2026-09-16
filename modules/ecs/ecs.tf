@@ -3,7 +3,7 @@ resource "aws_efs_file_system" "strata_efs" {
   for_each       = var.efs
   creation_token = each.value.creation_token
   encrypted      = each.value.encrypted
-  kms_key_id     = aws_kms_key.strata.arn
+  kms_key_id     = var.kms_key_arn
 
   lifecycle_policy {
     transition_to_ia = each.value.transition_to_ia
@@ -17,8 +17,8 @@ resource "aws_efs_mount_target" "strata" {
   for_each = var.private_subnets
 
   file_system_id  = aws_efs_file_system.strata_efs["strata_efs"].id
-  subnet_id       = aws_subnet.strata_private_subnet[each.key].id
-  security_groups = [aws_security_group.strata_sg["efs"].id]
+  subnet_id       = var.private_subnet_ids[each.key]
+  security_groups = [var.security_group_ids["efs"]]
 }
 
 # Logical cluster where the service runs.
@@ -46,8 +46,8 @@ resource "aws_ecs_task_definition" "service" {
   family                   = each.value.family
   requires_compatibilities = each.value.requires_compatibilities
   network_mode             = each.value.network_mode
-  execution_role_arn       = aws_iam_role.strata[var.role_names.ecs_role_key].arn
-  task_role_arn            = aws_iam_role.strata[var.role_names.ecs_task_role_key].arn
+  execution_role_arn       = var.role_arns[var.role_names.ecs_role_key]
+  task_role_arn            = var.role_arns[var.role_names.ecs_task_role_key]
   cpu                      = each.value.cpu
   memory                   = each.value.memory
 
@@ -100,7 +100,6 @@ resource "aws_ecs_service" "strata_service" {
   cluster         = aws_ecs_cluster.strata_cluster[each.value.cluster_key].id
   task_definition = aws_ecs_task_definition.service[each.value.task_key].arn
   desired_count   = each.value.desired_count
-  depends_on      = [aws_iam_role_policy_attachment.strata_attach_policy]
   launch_type     = each.value.launch_type
 
   service_connect_configuration {
@@ -111,7 +110,7 @@ resource "aws_ecs_service" "strata_service" {
       log_driver = "awslogs"
       options = {
         "awslogs-region"        = data.aws_region.current.region
-        "awslogs-group"         = aws_cloudwatch_log_group.strata_log_group.name
+        "awslogs-group"         = var.service_log_group_name
         "awslogs-stream-prefix" = "service-connect"
       }
     }
@@ -128,13 +127,13 @@ resource "aws_ecs_service" "strata_service" {
   }
 
   network_configuration {
-    subnets          = [for k in each.value.subnet_keys : aws_subnet.strata_private_subnet[k].id]
-    security_groups  = [for k in each.value.sg_keys : aws_security_group.strata_sg[k].id]
+    subnets          = [for k in each.value.subnet_keys : var.private_subnet_ids[k]]
+    security_groups  = [for k in each.value.sg_keys : var.security_group_ids[k]]
     assign_public_ip = false
   }
 
   load_balancer {
-    target_group_arn = aws_lb_target_group.strata[each.value.ecs_target_group].arn
+    target_group_arn = var.target_group_arns[each.value.ecs_target_group]
     container_name   = each.value.lb_container_name
     container_port   = each.value.container_port
   }
@@ -143,6 +142,6 @@ resource "aws_ecs_service" "strata_service" {
     enable   = each.value.alarms_enabled
     rollback = each.value.rollback
     # alarm is for_each = var.metrics so iterate over the map
-    alarm_names = [for v in aws_cloudwatch_metric_alarm.strata_metric_alarm_cw : v.alarm_name]
+    alarm_names = var.alarm_names
   }
 }

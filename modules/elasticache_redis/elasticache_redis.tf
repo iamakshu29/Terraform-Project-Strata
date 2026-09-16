@@ -3,7 +3,7 @@
 
 resource "aws_elasticache_subnet_group" "strata_redis" {
   name       = "strata-redis-subnet-group"
-  subnet_ids = [for s in aws_subnet.strata_data_subnet : s.id]
+  subnet_ids = values(var.data_subnet_ids)
 
   tags = merge({ Name = "strata-redis-subnet-group-${var.env_tag}" }, local.tags)
 }
@@ -18,12 +18,12 @@ resource "aws_elasticache_replication_group" "strata_redis" {
   parameter_group_name = var.elasticache.parameter_group_name
 
   subnet_group_name  = aws_elasticache_subnet_group.strata_redis.name
-  security_group_ids = [aws_security_group.strata_sg["redis"].id]
+  security_group_ids = [var.security_group_id]
 
   # Encryption — security requirement
   at_rest_encryption_enabled = true
   transit_encryption_enabled = true
-  kms_key_id                 = aws_kms_key.strata.arn
+  kms_key_id                 = var.kms_key_arn
 
   # Automatic failover requires num_cache_clusters >= 2
   automatic_failover_enabled = var.elasticache.num_cache_clusters >= 2

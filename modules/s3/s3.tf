@@ -64,7 +64,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "strata_bucket_enc
 
   rule {
     apply_server_side_encryption_by_default {
-      kms_master_key_id = each.value.logging ? null : aws_kms_key.strata.arn
+      kms_master_key_id = each.value.logging ? null : var.kms_key_arn
       sse_algorithm     = each.value.logging ? "AES256" : "aws:kms"
     }
   }
@@ -82,8 +82,8 @@ data "aws_iam_policy_document" "strata_bucket_policy" {
     principals {
       type = "AWS"
       identifiers = [
-        aws_iam_role.strata[var.role_names.ecs_task_role_key].arn,
-        aws_iam_role.strata[var.role_names.ec2_role_key].arn,
+        var.role_arns[var.role_names.ecs_task_role_key],
+        var.role_arns[var.role_names.ec2_role_key],
       ]
     }
 

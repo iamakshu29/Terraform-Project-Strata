@@ -25,3 +25,15 @@ variable "elasticache" {
   })
   description = "ElastiCache Redis replication group configuration"
 }
+
+variable "data_subnet_ids" {
+  type = map(string)
+}
+
+variable "security_group_id" {
+  type = string
+}
+
+variable "kms_key_arn" {
+  type = string
+}

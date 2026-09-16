@@ -3,7 +3,7 @@ resource "aws_ecr_repository" "strata_ecr" {
   image_tag_mutability = "IMMUTABLE_WITH_EXCLUSION"
   encryption_configuration {
     encryption_type = "KMS"
-    kms_key         = aws_kms_key.strata.arn
+    kms_key         = var.kms_key_arn
   }
 
   image_scanning_configuration {

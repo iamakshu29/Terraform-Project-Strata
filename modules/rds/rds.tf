@@ -16,11 +16,11 @@ resource "aws_db_instance" "strata_db" {
 
 
   # will do with secrets manager
-  username               = jsondecode(aws_secretsmanager_secret_version.strata_db_secret_val.secret_string)["username"]
-  password               = jsondecode(aws_secretsmanager_secret_version.strata_db_secret_val.secret_string)["password"]
-  vpc_security_group_ids = [aws_security_group.strata_sg["rds"].id]
-  db_subnet_group_name   = aws_db_subnet_group.strata_db_group.name
-  kms_key_id             = aws_kms_key.strata.arn
+  username               = var.db_credentials["username"]
+  password               = var.db_credentials["password"]
+  vpc_security_group_ids = [var.security_group_id]
+  db_subnet_group_name   = var.db_subnet_group_name
+  kms_key_id             = var.kms_key_arn
 
 
   # Adding a timeouts block allows you to override Terraform's default operational limits

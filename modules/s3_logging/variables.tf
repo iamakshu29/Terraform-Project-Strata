@@ -27,3 +27,23 @@ variable "s3" {
     logging                        = bool
   }))
 }
+
+variable "bucket_ids" {
+  type = map(string)
+}
+
+variable "bucket_arns" {
+  type = map(string)
+}
+
+variable "bucket_names" {
+  type = map(string)
+}
+
+variable "cloudtrail" {
+  type = object({
+    name                          = string
+    s3_key_prefix                 = string
+    include_global_service_events = bool
+  })
+}

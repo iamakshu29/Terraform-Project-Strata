@@ -48,3 +48,13 @@ variable "role_names" {
     vpc_flow_log_role_key = string
   })
 }
+
+variable "ec2_role_name" {
+  type = string
+}
+
+variable "security_group_id" { type = string }
+variable "kms_key_arn" { type = string }
+variable "private_subnet_ids" { type = map(string) }
+variable "target_group_arn" { type = string }
+variable "resource_label" { type = string }
