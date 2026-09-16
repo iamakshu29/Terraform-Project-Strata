@@ -14,11 +14,9 @@ terraform {
     region       = "ap-south-1"
     encrypt      = true
     use_lockfile = true
-    profile      = "strata"
   }
 }
 
 provider "aws" {
   region = var.aws_region
-  profile = "strata"
 }
