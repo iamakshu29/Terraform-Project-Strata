@@ -2,7 +2,7 @@
 resource "aws_security_group" "vpc_endpoints" {
   name   = "vpc-endpoints-sg"
   vpc_id = aws_vpc.strata.id
-  tags   = merge({ Name = "vpc-endpoints-sg" }, local.tags)
+  tags   = merge({ Name = "vpc-endpoints-sg-${var.env_tag}" }, local.tags)
 }
 
 resource "aws_vpc_security_group_ingress_rule" "vpc_endpoints_https" {
@@ -31,23 +31,10 @@ resource "aws_vpc_endpoint" "s3" {
     [for rt in aws_route_table.strata_data : rt.id],
   )
 
-  tags = merge({ Name = "endpoint-s3" }, local.tags)
+  tags = merge({ Name = "endpoint-s3-${var.env_tag}" }, local.tags)
 }
 
 # Interface endpoints — one ENI per private subnet, private DNS resolves service FQDNs to VPC IPs
-locals {
-  interface_endpoints = {
-    ecr_api        = "com.amazonaws.${var.aws_region}.ecr.api"
-    ecr_dkr        = "com.amazonaws.${var.aws_region}.ecr.dkr"
-    secretsmanager = "com.amazonaws.${var.aws_region}.secretsmanager"
-    ssm            = "com.amazonaws.${var.aws_region}.ssm"
-    ssmmessages    = "com.amazonaws.${var.aws_region}.ssmmessages" # required for Session Manager
-    ec2messages    = "com.amazonaws.${var.aws_region}.ec2messages" # required for Session Manager
-    logs           = "com.amazonaws.${var.aws_region}.logs"
-    kms            = "com.amazonaws.${var.aws_region}.kms"
-  }
-}
-
 resource "aws_vpc_endpoint" "interface" {
   for_each = local.interface_endpoints
 
@@ -58,5 +45,5 @@ resource "aws_vpc_endpoint" "interface" {
   security_group_ids  = [aws_security_group.vpc_endpoints.id]
   private_dns_enabled = true
 
-  tags = merge({ Name = "endpoint-${each.key}" }, local.tags)
+  tags = merge({ Name = "endpoint-${each.key}-${var.env_tag}" }, local.tags)
 }

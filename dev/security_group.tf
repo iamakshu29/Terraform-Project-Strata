@@ -9,30 +9,6 @@ resource "aws_security_group" "strata_sg" {
   }
 }
 
-locals {
-  ingress_rules = merge([
-    for sg_name, sg in var.security_group : {
-      for rule_name, rule in sg.ingress :
-      "${sg_name}-${rule_name}" => {
-        sg_name = sg_name
-        rule    = rule
-      }
-    }
-  ]...)
-}
-
-# {
-#   "alb-https" = {
-#     sg_name = "alb"
-#     rule = {
-#       cidr_ipv4   = "0.0.0.0/0"
-#       from_port   = 443
-#       to_port     = 443
-#       ip_protocol = "tcp"
-#     }
-#   }
-# }
-
 resource "aws_vpc_security_group_ingress_rule" "allow_tls_ipv4_strata_server_rule" {
   for_each = local.ingress_rules
 
