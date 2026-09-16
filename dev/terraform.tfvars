@@ -114,6 +114,26 @@ private_nacl_rules = {
       to_port    = 443
       cidr_block = "0.0.0.0/0"
     }
+
+    # Return traffic for outbound connections (NAT → internet responses)
+    ingress_3 = {
+      protocol   = "tcp"
+      rule_no    = 200
+      action     = "allow"
+      from_port  = 1024
+      to_port    = 65535
+      cidr_block = "0.0.0.0/0"
+    }
+
+    # ICMP — allows instances to receive all ICMP (echo-reply, unreachable, etc.)
+    ingress_4 = {
+      protocol   = "icmp"
+      rule_no    = 300
+      action     = "allow"
+      from_port  = 0
+      to_port    = 0
+      cidr_block = "0.0.0.0/0"
+    }
   }
 
   egress = {
@@ -123,6 +143,35 @@ private_nacl_rules = {
       action     = "allow"
       from_port  = 1024
       to_port    = 65535
+      cidr_block = "0.0.0.0/0"
+    }
+
+    # Outbound HTTP/HTTPS via NAT (apt-get, AWS APIs not covered by VPC endpoints)
+    egress_2 = {
+      protocol   = "tcp"
+      rule_no    = 200
+      action     = "allow"
+      from_port  = 80
+      to_port    = 80
+      cidr_block = "0.0.0.0/0"
+    }
+
+    egress_3 = {
+      protocol   = "tcp"
+      rule_no    = 201
+      action     = "allow"
+      from_port  = 443
+      to_port    = 443
+      cidr_block = "0.0.0.0/0"
+    }
+
+    # ICMP — allows instances to send all ICMP outbound (echo-request, etc.)
+    egress_4 = {
+      protocol   = "icmp"
+      rule_no    = 300
+      action     = "allow"
+      from_port  = 0
+      to_port    = 0
       cidr_block = "0.0.0.0/0"
     }
   }
@@ -210,8 +259,20 @@ security_group = {
   }
 
   bastion = {
-    # No SSH ingress — access via SSM Session Manager only (no open port needed)
-    ingress = {}
+    ingress = {
+      https = {
+        cidr_ipv4   = "0.0.0.0/0"
+        from_port   = 443
+        to_port     = 443
+        ip_protocol = "tcp"
+      }
+      ssh = {
+        cidr_ipv4   = "0.0.0.0/0"
+        from_port   = 22
+        to_port     = 22
+        ip_protocol = "tcp"
+      }
+    }
   }
 
   rds = {
@@ -274,8 +335,8 @@ lb = {
     internal                   = false # public-facing ALB in public subnets
     load_balancer_type         = "application"
     enable_deletion_protection = false
-    port                       = "443"
-    protocol                   = "HTTPS"
+    port                       = 80
+    protocol                   = "HTTP"
     certficate_provided        = false
   }
 }
@@ -674,7 +735,7 @@ ecs_service = {
     task_key                     = "strata_task"              # must match task_definitions key
     cluster_key                  = "strata_cluster"           # must match ecs_cluster key
     namespace_key                = "strata_service_discovery" # must match service_discovery key
-    name                         = "mongodb"
+    name                         = "example-svc"
     desired_count                = 3
     launch_type                  = "FARGATE"
     enabled                      = true

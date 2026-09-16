@@ -4,6 +4,11 @@ resource "aws_cloudwatch_log_group" "strata_log_group" {
   name              = "strata-cloudwatch-log-group"
   retention_in_days = var.cloudwatch.retention_in_days
   tags              = local.tags
+
+  # ECS (container insights / service connect) creates this group automatically before Terraform runs
+  lifecycle {
+    ignore_changes = [tags]
+  }
 }
 
 resource "aws_flow_log" "strata_flow_log" {
