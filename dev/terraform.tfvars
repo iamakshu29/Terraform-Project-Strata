@@ -1,61 +1,61 @@
 aws_region = "ap-south-1"
 
-domain_name = "strata.example.com"
+domain_name = "strata.example.dev"
 
 env_tag = "dev"
 
 vpc = {
-  cidr = "10.0.0.0/16"
+  cidr = "10.1.0.0/16"
 }
 
 # Subnet Types
 public_subnets = {
   "ap-south-1a" = {
-    cidr = "10.0.1.0/24"
+    cidr = "10.1.1.0/24"
     az   = "ap-south-1a"
   }
 
   "ap-south-1b" = {
-    cidr = "10.0.2.0/24"
+    cidr = "10.1.2.0/24"
     az   = "ap-south-1b"
   }
 
   "ap-south-1c" = {
-    cidr = "10.0.3.0/24"
+    cidr = "10.1.3.0/24"
     az   = "ap-south-1c"
   }
 }
 
 private_subnets = {
   "ap-south-1a" = {
-    cidr = "10.0.11.0/24"
+    cidr = "10.1.11.0/24"
     az   = "ap-south-1a"
   }
 
   "ap-south-1b" = {
-    cidr = "10.0.15.0/24"
+    cidr = "10.1.15.0/24"
     az   = "ap-south-1b"
   }
 
   "ap-south-1c" = {
-    cidr = "10.0.19.0/24"
+    cidr = "10.1.19.0/24"
     az   = "ap-south-1c"
   }
 }
 
 data_subnets = {
   "ap-south-1a" = {
-    cidr = "10.0.101.0/24"
+    cidr = "10.1.101.0/24"
     az   = "ap-south-1a"
   }
 
   "ap-south-1b" = {
-    cidr = "10.0.102.0/24"
+    cidr = "10.1.102.0/24"
     az   = "ap-south-1b"
   }
 
   "ap-south-1c" = {
-    cidr = "10.0.103.0/24"
+    cidr = "10.1.103.0/24"
     az   = "ap-south-1c"
   }
 }
@@ -273,23 +273,24 @@ lb = {
   strataLB = {
     internal                   = false # public-facing ALB in public subnets
     load_balancer_type         = "application"
-    enable_deletion_protection = true
+    enable_deletion_protection = false
     port                       = "443"
     protocol                   = "HTTPS"
+    certficate_provided        = false
   }
 }
 
 target_group = {
   strataInstance = {
-    port        = 8443
-    protocol    = "HTTPS"
+    port        = 8080
+    protocol    = "HTTP"
     target_type = "instance"
     type        = "forward"
     lb_key      = "strataLB" # Matches the key in var.lb
   }
   strataECS = {
-    port        = 8442
-    protocol    = "HTTPS"
+    port        = 8080
+    protocol    = "HTTP"
     target_type = "ip"
     type        = "forward"
     lb_key      = "strataLB" # Matches the key in var.lb
@@ -303,14 +304,14 @@ rds = {
   auto_minor_version_upgrade = false # Custom for SQL Server does not support minor version upgrades
   backup_retention_period    = 7
   identifier                 = "strata-db"
-  multi_az                   = true
+  multi_az                   = false
   publicly_accessible        = false
-  deletion_protection        = true
+  deletion_protection        = false
   storage_encrypted          = true
-  skip_final_snapshot        = false # true for Prod only
+  skip_final_snapshot        = true # false for Prod only
   apply_immediately          = false
-  engine_version             = "16.2"
-  instance_class             = "db.t3.medium" # "db.t3.medium" for dev, "db.r6g.large" minimum for prod
+  engine_version             = "16.13"
+  instance_class             = "db.t3.medium"
   engine                     = "postgres"
   db_name                    = "testDB"
 }
@@ -328,15 +329,15 @@ secrets = {
 
 # ---------------------------------------------------------
 aws_bastian_instance = {
-  instance_type               = "t2.medium"
+  instance_type               = "t2.micro"
   subnet_az                   = "ap-south-1a"
   subnet_type                 = "public"
   associate_public_ip_address = true
-  ebs_size                    = 40
+  volume_size                 = 40
 }
 
 launch_template = {
-  instance_type               = "t3.large"
+  instance_type               = "t3.medium"
   subnet_az                   = "ap-south-1b"
   subnet_type                 = "private"
   associate_public_ip_address = false
@@ -539,7 +540,7 @@ cloudwatch = {
 }
 
 s3 = {
-  strata_bucket = {
+  strata-bucket = {
     block_public_acls              = true
     block_public_policy            = true
     ignore_public_acls             = true
@@ -554,7 +555,7 @@ s3 = {
     delete_data_after              = 365
     logging                        = false
   }
-  strata_logging_bucket = {
+  strata-logging-bucket = {
     block_public_acls              = true
     block_public_policy            = true
     ignore_public_acls             = true
@@ -687,7 +688,7 @@ ecs_service = {
     placement_strategy_type      = "binpack"
     placement_strategy_field     = "cpu"
     ecs_target_group             = "strataECS" # same as target_group key for ecs
-    lb_container_name            = "eaxmple-container"
+    lb_container_name            = "strata-app-1"
     container_port               = 8080
     alarms_enabled               = true
     rollback                     = true
@@ -713,22 +714,24 @@ task_definitions = {
     tasks = {
       image_1 = {
         name          = "strata-app-1"
-        image         = "strata-image-1"
+        image         = "public.ecr.aws/nginx/nginx:latest"
         cpu           = 10
         memory        = 512
         essential     = true
-        containerPort = 80
-        hostPort      = 80
+        containerPort = 8080
+        hostPort      = 8080
+        port_name     = "http"
         network_mode  = "awsvpc"
       }
       image_2 = {
         name          = "strata-app-2"
-        image         = "strata-image-2"
+        image         = "public.ecr.aws/nginx/nginx:latest"
         cpu           = 10
         memory        = 256
         essential     = true
         containerPort = 443
         hostPort      = 443
+        port_name     = "https"
         network_mode  = "awsvpc"
       }
     }

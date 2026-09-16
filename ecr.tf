@@ -21,7 +21,8 @@ resource "aws_ecr_repository" "strata_ecr" {
   }
 }
 
-resource "aws_ecr_lifecycle_policy" "tagged_image_policy" {
+# ECR only supports one lifecycle policy per repository; all rules combined here
+resource "aws_ecr_lifecycle_policy" "strata_ecr_lifecycle" {
   repository = aws_ecr_repository.strata_ecr.name
 
   policy = <<EOF
@@ -29,7 +30,7 @@ resource "aws_ecr_lifecycle_policy" "tagged_image_policy" {
   "rules": [
     {
       "rulePriority": 1,
-      "description": "Keep last 30 images",
+      "description": "Keep last 30 tagged images with v prefix",
       "selection": {
         "tagStatus": "tagged",
         "tagPrefixList": ["v"],
@@ -39,21 +40,10 @@ resource "aws_ecr_lifecycle_policy" "tagged_image_policy" {
       "action": {
         "type": "expire"
       }
-    }
-  ]
-}
-EOF
-}
-
-resource "aws_ecr_lifecycle_policy" "policy_to_archive_delete_image" {
-  repository = aws_ecr_repository.strata_ecr.name
-
-  policy = <<EOF
-{
-  "rules": [
+    },
     {
-      "rulePriority": 1,
-      "description": "Archive images not pulled in 90 days",
+      "rulePriority": 2,
+      "description": "Archive untagged images not pulled in 90 days",
       "selection": {
         "tagStatus": "any",
         "countType": "sinceImagePulled",
@@ -66,7 +56,7 @@ resource "aws_ecr_lifecycle_policy" "policy_to_archive_delete_image" {
       }
     },
     {
-      "rulePriority": 2,
+      "rulePriority": 3,
       "description": "Delete images archived for more than 365 days",
       "selection": {
         "tagStatus": "any",

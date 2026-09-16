@@ -56,6 +56,7 @@ resource "aws_cloudwatch_dashboard" "strata" {
         properties = {
           title  = "ALB — Request Count & 5XX Errors"
           period = 300
+          region = "ap-south-1"
           stat   = "Sum"
           metrics = [
             ["AWS/ApplicationELB", "RequestCount", "LoadBalancer", local.dimension_value_to_arn["lb-arn_suffix"]],
@@ -70,6 +71,7 @@ resource "aws_cloudwatch_dashboard" "strata" {
         properties = {
           title  = "ALB — Target Response Time (p99)"
           period = 300
+          region = "ap-south-1"
           stat   = "p99"
           metrics = [
             ["AWS/ApplicationELB", "TargetResponseTime", "LoadBalancer", local.dimension_value_to_arn["lb-arn_suffix"]],
@@ -83,6 +85,7 @@ resource "aws_cloudwatch_dashboard" "strata" {
         properties = {
           title  = "RDS — CPU & Connections"
           period = 300
+          region = "ap-south-1"
           stat   = "Average"
           metrics = [
             ["AWS/RDS", "CPUUtilization", "DBInstanceIdentifier", local.dimension_value_to_arn["rds_identifier"]],
@@ -97,6 +100,7 @@ resource "aws_cloudwatch_dashboard" "strata" {
         properties = {
           title  = "ElastiCache Redis — Memory & Connections"
           period = 300
+          region = "ap-south-1"
           stat   = "Average"
           metrics = [
             ["AWS/ElastiCache", "DatabaseMemoryUsagePercentage", "ReplicationGroupId", local.dimension_value_to_arn["elasticache_rep_group_id"]],
@@ -111,6 +115,7 @@ resource "aws_cloudwatch_dashboard" "strata" {
         properties = {
           title  = "ECS — CPU & Memory Utilization"
           period = 300
+          region = "ap-south-1"
           stat   = "Average"
           metrics = [
             ["AWS/ECS", "CPUUtilization", "ClusterName", local.dimension_value_to_arn["ecs_cluster"], "ServiceName", local.dimension_value_to_arn["ecs_service"]],
@@ -125,6 +130,7 @@ resource "aws_cloudwatch_dashboard" "strata" {
         properties = {
           title  = "ALB Target Group — Healthy Host Count"
           period = 300
+          region = "ap-south-1"
           stat   = "Average"
           metrics = [
             ["AWS/ApplicationELB", "HealthyHostCount", "TargetGroup", local.dimension_value_to_arn["lb-target_group"], "LoadBalancer", local.dimension_value_to_arn["lb-arn_suffix"]]

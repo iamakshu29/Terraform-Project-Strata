@@ -2,7 +2,7 @@
 
 resource "aws_route_table" "strata_public" {
   vpc_id = aws_vpc.strata.id
-  tags   = merge({ Name = "public-rt" }, local.tags)
+  tags   = merge({ Name = "public-rt-${var.env_tag}" }, local.tags)
 }
 
 resource "aws_route" "strata_public" {
@@ -25,7 +25,7 @@ resource "aws_route_table_association" "strata_public" {
 resource "aws_route_table" "strata_private" {
   for_each = var.private_subnets
   vpc_id   = aws_vpc.strata.id
-  tags     = merge({ Name = "private-rt-${each.key}" }, local.tags)
+  tags     = merge({ Name = "private-rt-${each.key}-${var.env_tag}" }, local.tags)
 }
 
 resource "aws_route" "strata_private" {
@@ -47,7 +47,7 @@ resource "aws_route_table_association" "strata_private" {
 resource "aws_route_table" "strata_data" {
   for_each = var.data_subnets
   vpc_id   = aws_vpc.strata.id
-  tags     = merge({ Name = "data-rt-${each.key}" }, local.tags)
+  tags     = merge({ Name = "data-rt-${each.key}-${var.env_tag}" }, local.tags)
 }
 
 resource "aws_route_table_association" "strata_data" {

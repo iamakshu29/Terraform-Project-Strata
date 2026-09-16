@@ -1,19 +1,20 @@
-#   1. Apply THIS file first with the local backend (default).
-#   2. Add S3 bucket in provider.tf and fill in the bucket name from the output below.
-#   3. Run `terraform init -migrate-state` to move local state into S3.
+data "aws_caller_identity" "current" {}
 
 locals {
-  state_bucket_name = "strata-tfstate-${data.aws_caller_identity.current.account_id}"
+  bucket_name = "strata-tfstate-${data.aws_caller_identity.current.account_id}"
 }
 
 resource "aws_s3_bucket" "strata_state" {
-  bucket = local.state_bucket_name
+  bucket = local.bucket_name
 
   lifecycle {
     prevent_destroy = true
   }
 
-  tags = merge({ Name = "strata-terraform-state" }, local.tags)
+  tags = {
+    Name    = "strata-terraform-state"
+    Project = "Strata"
+  }
 }
 
 resource "aws_s3_bucket_versioning" "strata_state" {
@@ -32,18 +33,13 @@ resource "aws_s3_bucket_public_access_block" "strata_state" {
   restrict_public_buckets = true
 }
 
+# Uses AWS-managed key — no dependency on the main project's KMS key
 resource "aws_s3_bucket_server_side_encryption_configuration" "strata_state" {
   bucket = aws_s3_bucket.strata_state.id
 
   rule {
     apply_server_side_encryption_by_default {
-      kms_master_key_id = aws_kms_key.strata.arn
-      sse_algorithm     = "aws:kms"
+      sse_algorithm = "aws:kms"
     }
   }
-}
-
-output "state_bucket_name" {
-  description = "S3 bucket name — copy this into the backend block in provider.tf"
-  value       = aws_s3_bucket.strata_state.bucket
 }

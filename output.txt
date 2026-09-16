@@ -1,0 +1,60 @@
+
+Strata infrastructure check — region: ap-south-1  account: 025066281843
+=====================================================================
+
+[ Networking ]
+  [PASS] VPC (vpc-09e9c2ff7e67e6811) — available
+  [PASS] Public subnets — 3 found
+  [PASS] Private subnets — 3 found
+  [PASS] NAT Gateways — 2 available
+  [PASS] Internet Gateway — igw-0b220cef9079ae2ba
+
+[ Security ]
+  [PASS] KMS key (alias/strata-cmk) — 09827e38-17b3-4a46-ab2c-211284862b58
+  [PASS] Secrets Manager — starta_secrets_manager exists
+  [PASS] CloudTrail (strata-trail) — logging
+  [PASS] CloudWatch log group — strata-cloudwatch-log-group
+
+[ Compute ]
+  [PASS] Bastion EC2 (i-0e30cdd0bee876ce7) — running
+  [PASS] ASG (strata-asg-dev) — 2/1 InService
+  [PASS] Launch Template (strata-app-lt) — lt-00d1886c92759b112
+
+[ Load Balancer ]
+  [PASS] ALB (strataLB) — strataLB-77589015.ap-south-1.elb.amazonaws.com
+  [FAIL] Target group (strataECS) — 0 healthy targets
+  [FAIL] Target group (strataInstance) — 0 healthy targets
+
+[ ECS ]
+  [PASS] ECS cluster (strata-app-cluster) — ACTIVE
+  [FAIL] ECS service (mongodb) — running=0, desired=3
+  [PASS] ECR repo (strata-repo) — 025066281843.dkr.ecr.ap-south-1.amazonaws.com/strata-repo
+
+[ Data ]
+  [PASS] RDS (strata-db) — strata-db.c3cyya42myrn.ap-south-1.rds.amazonaws.com
+  [PASS] Redis (strata-redis) — primary=master.strata-redis.keyake.aps1.cache.amazonaws.com
+  [PASS] EFS (strata-efs) — available
+
+[ Storage ]
+{
+    "BucketArn": "arn:aws:s3:::strata-bucket-025066281843",
+    "BucketRegion": "ap-south-1",
+    "AccessPointAlias": false
+}
+  [PASS] S3 bucket (strata-bucket-025066281843) — exists
+{
+    "BucketArn": "arn:aws:s3:::strata-logging-bucket-025066281843",
+    "BucketRegion": "ap-south-1",
+    "AccessPointAlias": false
+}
+  [PASS] S3 bucket (strata-logging-bucket-025066281843) — exists
+{
+    "BucketArn": "arn:aws:s3:::strata-tfstate-025066281843",
+    "BucketRegion": "ap-south-1",
+    "AccessPointAlias": false
+}
+  [PASS] S3 bucket (strata-tfstate-025066281843) — exists
+
+=====================================================================
+Result: 21 passed, 3 failed
+
