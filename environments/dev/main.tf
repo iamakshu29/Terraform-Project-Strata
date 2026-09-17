@@ -73,7 +73,6 @@ module "alb" {
   vpc_id             = module.vpc.vpc_id
   security_group_ids = module.security_group.security_group_ids
   public_subnet_ids  = module.vpc.public_subnet_ids
-  logging_bucket_name = module.s3_logging.logging_bucket_name
   lb                 = var.lb
   target_group       = var.target_group
 }
